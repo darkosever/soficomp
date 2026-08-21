@@ -285,7 +285,7 @@ def init_db():
         'social_facebook': '',
         'social_instagram': '',
         'social_linkedin': '',
-        'hero_title': 'Avtomati prihodnosti.',
+        'hero_title': 'Avtomati prihodnosti!',
         'hero_subtitle': 'Pametne rešitve za samopostrežno prodajo. Zanesljivo, moderno, connected.',
         'hero_cta': 'Konfiguriraj avtomat',
         'contact_address': 'Slovenija',
