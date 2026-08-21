@@ -1,0 +1,118 @@
+{% extends "admin/base.html" %}
+{% block title %}Konfigurator{% endblock %}
+{% block topbar_title %}Upravljanje konfiguratorja{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr 360px; gap:24px; align-items:start;">
+  <!-- Options by category -->
+  <div style="display:flex; flex-direction:column; gap:24px;">
+    {% for cat in cats %}
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">{{ cat.name }}</div>
+          <div style="font-size:0.78rem; color:var(--text-3); margin-top:2px;">Ikona: {{ cat.icon }}</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Naziv</th>
+              <th>Osnovna cena</th>
+              <th>Doplačilo</th>
+              <th>Privzeto</th>
+              <th>Slika</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set cat_opts = options | selectattr('category_id', 'equalto', cat.id) | list %}
+            {% for opt in cat_opts %}
+            <tr>
+              <td>
+                <span class="primary">{{ opt.name }}</span>
+                {% if opt.description %}
+                <div class="muted">{{ opt.description[:60] }}{% if opt.description|length > 60 %}...{% endif %}</div>
+                {% endif %}
+              </td>
+              <td>{{ "%.0f"|format(opt.price_base) }} €</td>
+              <td>+ {{ "%.0f"|format(opt.price_add) }} €</td>
+              <td>
+                {% if opt.is_default %}
+                <span style="color:var(--success); font-weight:700;">✓</span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if opt.image %}
+                <img src="{{ url_for('static', filename='uploads/' ~ opt.image) }}" class="img-preview" alt="">
+                {% else %}
+                <span style="color:var(--text-3); font-size:0.78rem;">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <form method="POST" action="{{ url_for('admin_config_option_delete', opt_id=opt.id) }}"
+                      onsubmit="return confirm('Izbriši to možnost?')">
+                  <button type="submit" class="btn btn-danger btn-sm btn-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; color:var(--text-3); padding:20px;">Ni možnosti za to kategorijo.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Add option form -->
+  <div class="card" style="position:sticky; top:80px;">
+    <div class="card-header"><div class="card-title">Dodaj novo možnost</div></div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('admin_config_option_add') }}" enctype="multipart/form-data">
+        <div class="form-group">
+          <label class="form-label">Kategorija *</label>
+          <select name="category_id" class="form-control" required>
+            {% for cat in cats %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Naziv *</label>
+          <input type="text" name="name" class="form-control" required placeholder="npr. Wi-Fi + 4G">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Opis</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Kratek opis možnosti..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Osnovna cena (€)</label>
+            <input type="number" name="price_base" class="form-control" value="0" min="0" step="10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Doplačilo (€)</label>
+            <input type="number" name="price_add" class="form-control" value="0" min="0" step="10">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Slika (opcijsko)</label>
+          <input type="file" name="image" class="form-control" accept="image/*">
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="checkbox-wrap">
+            <input type="checkbox" name="is_default" value="1">
+            Privzeta možnost v kategoriji
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Dodaj možnost</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "portal/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}Dobrodošli, {{ session.customer_name }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('portal_report_issue') }}" class="btn btn-primary btn-sm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Nova prijava
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ machines|length }}</div>
+    <div class="stat-label">Avtomati</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ issues|length }}</div>
+    <div class="stat-label">Zadnje prijave</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="{{ 'color:var(--warning)' if open_requests else '' }}">{{ open_requests }}</div>
+    <div class="stat-label">Odprti zahtevki</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;">
+
+  <!-- Machines -->
+  <div class="p-card">
+    <div class="p-card-header">
+      <div class="p-card-title">Moji avtomati</div>
+      <a href="{{ url_for('portal_machines') }}" class="btn btn-secondary btn-sm">Vsi →</a>
+    </div>
+    {% if machines %}
+    <div class="p-table-wrap">
+      <table class="p-table">
+        <tbody>
+          {% for m in machines[:5] %}
+          <tr>
+            <td>
+              <span class="primary">{{ m.name }}</span>
+              <div class="muted" style="font-size:0.72rem;">{{ m.location or '—' }}</div>
+            </td>
+            <td>
+              {% set sc = {'active':'var(--success)','maintenance':'var(--warning)','inactive':'var(--text-3)'} %}
+              {% set sn = {'active':'Aktiven','maintenance':'Vzdrž.','inactive':'Neakt.'} %}
+              <span class="status-badge" style="background:{{ sc.get(m.status,'var(--text-3)') }}1a; color:{{ sc.get(m.status,'var(--text-3)') }}; border:1px solid {{ sc.get(m.status,'var(--text-3)') }}33; font-size:0.68rem;">
+                {{ sn.get(m.status, m.status) }}
+              </span>
+            </td>
+            <td><a href="{{ url_for('portal_machine_detail', machine_id=m.id) }}" class="btn btn-secondary btn-sm">Odpri</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-card-body" style="color:var(--text-3); font-size:0.85rem; text-align:center; padding:24px;">
+      Ni dodanih avtomatov.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Recent issues -->
+  <div class="p-card">
+    <div class="p-card-header">
+      <div class="p-card-title">Zadnje prijave</div>
+      <a href="{{ url_for('portal_issues') }}" class="btn btn-secondary btn-sm">Vse →</a>
+    </div>
+    {% if issues %}
+    <div class="p-table-wrap">
+      <table class="p-table">
+        <tbody>
+          {% for i in issues %}
+          <tr>
+            <td>
+              <div style="font-family:monospace; font-size:0.72rem; color:var(--accent);">{{ i.ticket_id }}</div>
+              <div class="muted" style="font-size:0.72rem;">{{ i.created_at[:10] }}</div>
+            </td>
+            <td>
+              {% if i.status_color %}
+              <span class="status-badge" style="background:{{ i.status_color }}1a; color:{{ i.status_color }}; border:1px solid {{ i.status_color }}33; font-size:0.68rem;">
+                {{ i.status_name or '—' }}
+              </span>
+              {% else %}
+              <span class="muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-card-body" style="color:var(--text-3); font-size:0.85rem; text-align:center; padding:24px;">
+      Ni prijav.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% if open_requests > 0 %}
+<div class="alert alert-info" style="margin-top:20px;">
+  Imate <strong>{{ open_requests }}</strong> odprt{{ 'ih zahtevkov' if open_requests > 1 else ' zahtevek' }} za konfiguracijo. Oglejte si stanje pri posameznem avtomatu.
+</div>
+{% endif %}
+{% endblock %}

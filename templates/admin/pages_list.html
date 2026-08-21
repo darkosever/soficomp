@@ -1,0 +1,64 @@
+{% extends "admin/base.html" %}
+{% block title %}Strani{% endblock %}
+{% block topbar_title %}Strani{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_page_new') }}" class="btn btn-primary btn-sm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Nova stran
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  {% if pages %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Naslov</th>
+          <th>URL (slug)</th>
+          <th>Status</th>
+          <th>Posodobljeno</th>
+          <th>Akcije</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for page in pages %}
+        <tr>
+          <td><span class="primary">{{ page.title }}</span></td>
+          <td><span style="font-family:monospace; font-size:0.82rem; color:var(--text-3);">/stran/{{ page.slug }}</span></td>
+          <td>
+            {% if page.is_published %}
+              <span class="status-badge" style="background:rgba(34,197,94,0.1); color:var(--success);">Objavljena</span>
+            {% else %}
+              <span class="status-badge" style="background:rgba(107,114,128,0.1); color:var(--text-3);">Osnutek</span>
+            {% endif %}
+          </td>
+          <td><span class="muted">{{ page.updated_at[:10] }}</span></td>
+          <td style="display:flex; gap:6px; align-items:center;">
+            <a href="{{ url_for('admin_page_edit', page_id=page.id) }}" class="btn btn-secondary btn-sm">Uredi</a>
+            <a href="{{ url_for('dynamic_page', slug=page.slug) }}" target="_blank" class="btn btn-secondary btn-sm btn-icon" title="Ogled">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+            <form method="POST" action="{{ url_for('admin_page_delete', page_id=page.id) }}"
+                  onsubmit="return confirm('Izbriši stran {{ page.title }}?')">
+              <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Izbriši">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <h3>Ni strani</h3>
+    <p>Ustvarite novo stran.</p>
+    <a href="{{ url_for('admin_page_new') }}" class="btn btn-primary" style="margin-top:16px;">Ustvari stran</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

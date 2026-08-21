@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prijava — SOFIComp Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --bg:#0a0a0a; --bg-2:#111; --bg-3:#1a1a1a; --border:#2a2a2a;
+      --text-1:#f5f5f5; --text-2:#a3a3a3; --text-3:#555;
+      --accent:#3b82f6; --danger:#ef4444; --radius:10px;
+    }
+    body { background:var(--bg); color:var(--text-1); font-family:'Inter',sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .login-wrap { width:100%; max-width:380px; padding:24px; }
+    .login-logo { text-align:center; margin-bottom:32px; }
+    .login-logo-text { font-size:1.6rem; font-weight:800; }
+    .login-logo-text span { color:var(--accent); }
+    .login-sub { font-size:0.78rem; color:var(--text-3); margin-top:4px; }
+    .login-card { background:var(--bg-2); border:1px solid var(--border); border-radius:14px; padding:28px; }
+    .login-title { font-size:1rem; font-weight:700; margin-bottom:20px; }
+    .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+    .form-label { font-size:0.78rem; font-weight:600; color:var(--text-2); }
+    .form-control {
+      background:var(--bg-3); border:1px solid var(--border); border-radius:8px;
+      color:var(--text-1); padding:10px 12px; font-size:0.875rem; font-family:inherit;
+      outline:none; width:100%; transition:border-color 0.15s;
+    }
+    .form-control:focus { border-color:var(--accent); }
+    .btn-submit {
+      width:100%; padding:11px; background:var(--accent); color:#fff;
+      border:none; border-radius:8px; font-size:0.875rem; font-weight:700;
+      cursor:pointer; font-family:inherit; margin-top:4px; transition:background 0.15s;
+    }
+    .btn-submit:hover { background:#2563eb; }
+    .error-msg { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#fca5a5; border-radius:8px; padding:10px 14px; font-size:0.82rem; margin-bottom:14px; }
+    .login-footer { text-align:center; margin-top:20px; font-size:0.78rem; color:var(--text-3); }
+    .login-footer a { color:var(--accent); text-decoration:none; }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-logo">
+    <div class="login-logo-text">SOFIComp<span>.</span></div>
+    <div class="login-sub">Strankini portal</div>
+  </div>
+  <div class="login-card">
+    <div class="login-title">Prijava</div>
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">Uporabniško ime</label>
+        <input type="text" name="username" class="form-control" required autofocus placeholder="vaše-podjetje">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Geslo</label>
+        <input type="password" name="password" class="form-control" required>
+      </div>
+      <button type="submit" class="btn-submit">Prijava</button>
+    </form>
+  </div>
+  <div class="login-footer">
+    <a href="{{ url_for('index') }}">← Nazaj na spletno stran</a>
+  </div>
+</div>
+</body>
+</html>

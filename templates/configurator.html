@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block title %}Konfigurator — {{ site.site_name }}{% endblock %}
+
+{% block head %}
+<style>
+  body { padding-top: 68px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="background:var(--bg-1); border-bottom:1px solid var(--border); padding:40px 0 0;">
+  <div class="container">
+    <div class="label" style="margin-bottom:10px;">Konfigurator</div>
+    <h1 style="font-size:clamp(1.8rem,4vw,3rem); margin-bottom:8px;">Ustvari vaš avtomat</h1>
+    <p style="color:var(--text-2); margin-bottom:32px; font-size:1rem;">Izberite možnosti in prejmite prilagojeno ponudbo.</p>
+
+    <!-- Steps indicator -->
+    <div class="config-steps" id="stepsBar">
+      {% for cat in cats %}
+      <div class="config-step {% if loop.first %}active{% endif %}" data-step="{{ loop.index0 }}">
+        <div class="config-step-dot">{{ loop.index }}</div>
+        <div class="config-step-label">{{ cat.name.split(' ')[0] }}</div>
+      </div>
+      {% if not loop.last %}
+      <div class="config-step-line"></div>
+      {% endif %}
+      {% endfor %}
+      <div class="config-step" data-step="{{ cats|length }}">
+        <div class="config-step-dot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="config-step-label">Povzetek</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section style="padding:48px 0 80px;">
+  <div class="container">
+    <div class="config-layout">
+      <!-- LEFT: Step panels -->
+      <div>
+        {% for cat in cats %}
+        <div class="config-panel" id="step-{{ loop.index0 }}" style="{{ 'display:block' if loop.first else 'display:none' }}">
+          <div class="config-panel-title">{{ cat.name }}</div>
+          <div class="config-panel-sub">Izberite eno od spodnjih možnosti</div>
+
+          <div class="config-options">
+            {% set opts = options_by_cat.get(cat.id, []) %}
+            {% for opt in opts %}
+            <div class="config-option {% if opt.is_default %}selected{% endif %}"
+                 data-cat="{{ cat.id }}" data-cat-name="{{ cat.name }}"
+                 data-opt="{{ opt.id }}" data-name="{{ opt.name }}"
+                 data-price-base="{{ opt.price_base }}" data-price-add="{{ opt.price_add }}"
+                 onclick="selectOption(this)">
+              <div class="config-option-check">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="config-option-img">
+                {% if opt.image %}
+                  <img src="{{ url_for('static', filename='uploads/' ~ opt.image) }}" alt="{{ opt.name }}" loading="lazy">
+                {% else %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" width="40" height="40" style="opacity:0.15"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                {% endif %}
+              </div>
+              <div class="config-option-name">{{ opt.name }}</div>
+              <div class="config-option-desc">{{ opt.description }}</div>
+              {% set total_price = opt.price_base + opt.price_add %}
+              <div class="config-option-price {{ 'free' if total_price == 0 }}">
+                {% if opt.price_base > 0 %}
+                  od {{ "%.0f"|format(opt.price_base) }} €
+                  {% if opt.price_add > 0 %} + {{ "%.0f"|format(opt.price_add) }} €{% endif %}
+                {% elif opt.price_add > 0 %}
+                  + {{ "%.0f"|format(opt.price_add) }} €
+                {% else %}
+                  Vključeno
+                {% endif %}
+              </div>
+              {% if opt.specs %}
+              <div class="product-specs" style="margin-top:10px;">
+                {% set specs = opt.specs | tojson | safe %}
+                {% for k, v in (opt.specs | from_json).items() %}
+                  <span class="spec-tag">{{ k }}: {{ v }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="config-nav">
+            {% if not loop.first %}
+            <button class="btn btn-secondary" onclick="goStep({{ loop.index0 - 1 }})">
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              Nazaj
+            </button>
+            {% endif %}
+            <button class="btn btn-primary" style="margin-left:auto" onclick="goStep({{ loop.index0 + 1 }})">
+              {% if loop.last %}Povzetek{% else %}Naprej{% endif %}
+              <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- SUMMARY STEP -->
+        <div class="config-panel" id="step-{{ cats|length }}" style="display:none;">
+          <div class="config-panel-title">Povzetek konfiguracije</div>
+          <div class="config-panel-sub">Preglejte vašo izbiro in oddajte povpraševanje.</div>
+
+          <div id="summaryDetails" style="margin-bottom:32px;"></div>
+
+          <div style="background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; margin-bottom:28px;">
+            <h3 style="margin-bottom:20px; font-size:1.1rem;">Pošljite povpraševanje</h3>
+            <form id="quoteForm" onsubmit="submitQuote(event)">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Ime in priimek *</label>
+                  <input type="text" class="form-control" id="qName" required placeholder="Janez Novak">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Podjetje</label>
+                  <input type="text" class="form-control" id="qCompany" placeholder="Naziv podjetja">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Email *</label>
+                  <input type="email" class="form-control" id="qEmail" required placeholder="info@podjetje.si">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Telefon</label>
+                  <input type="tel" class="form-control" id="qPhone" placeholder="+386 ...">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Opombe</label>
+                <textarea class="form-control" id="qNotes" rows="3" placeholder="Posebne zahteve, lokacija, število aparatov..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-lg" style="width:100%">
+                <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Pošlji povpraševanje
+              </button>
+            </form>
+            <div id="quoteSuccess" style="display:none;" class="issue-ticket" style="margin-top:20px;">
+              <div style="font-size:2rem; margin-bottom:12px;">✓</div>
+              <h3 style="margin-bottom:8px;">Povpraševanje poslano!</h3>
+              <p style="color:var(--text-2);">Kontaktirali vas bomo v roku 24 ur.</p>
+            </div>
+          </div>
+
+          <div class="config-nav">
+            <button class="btn btn-secondary" onclick="goStep({{ cats|length - 1 }})">
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              Nazaj
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-outline" style="margin-left:auto">Na začetek</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Live summary -->
+      <div class="config-summary">
+        <h3>Vaša konfiguracija</h3>
+        <ul class="config-summary-items" id="liveSummary">
+          {% for cat in cats %}
+          <li class="config-summary-item" id="sum-{{ cat.id }}">
+            <div>
+              <div class="cat">{{ cat.name }}</div>
+              <div class="val" id="sum-val-{{ cat.id }}">—</div>
+            </div>
+            <div class="price" id="sum-price-{{ cat.id }}">—</div>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="config-total">
+          <div>
+            <div class="config-total-label">Skupaj (ocena)</div>
+            <div class="config-total-vat">Brez DDV • pribl. cena</div>
+          </div>
+          <div class="config-total-price">
+            <span id="totalPrice">0</span> €
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <a href="{{ url_for('report_issue') }}" class="btn btn-secondary" style="width:100%; justify-content:center; font-size:0.82rem; padding:10px;">
+            Imate težavo z obstoječim avtomatom?
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// State
+const selections = {};
+let currentStep = 0;
+const totalSteps = {{ cats|length }} + 1; // +1 for summary
+
+// Parse options from DOM
+const catData = {};
+document.querySelectorAll('.config-option').forEach(el => {
+  const catId = el.dataset.cat;
+  if (!catData[catId]) catData[catId] = { name: el.dataset.catName };
+  // Auto-select defaults
+  if (el.classList.contains('selected')) {
+    selections[catId] = {
+      id: el.dataset.opt,
+      name: el.dataset.name,
+      priceBase: parseFloat(el.dataset.priceBase) || 0,
+      priceAdd: parseFloat(el.dataset.priceAdd) || 0,
+    };
+    updateSummaryItem(catId);
+  }
+});
+updateTotal();
+
+function selectOption(el) {
+  const catId = el.dataset.cat;
+  document.querySelectorAll(`.config-option[data-cat="${catId}"]`).forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selections[catId] = {
+    id: el.dataset.opt,
+    name: el.dataset.name,
+    priceBase: parseFloat(el.dataset.priceBase) || 0,
+    priceAdd: parseFloat(el.dataset.priceAdd) || 0,
+  };
+  updateSummaryItem(catId);
+  updateTotal();
+}
+
+function updateSummaryItem(catId) {
+  const sel = selections[catId];
+  const valEl = document.getElementById('sum-val-' + catId);
+  const priceEl = document.getElementById('sum-price-' + catId);
+  if (!valEl) return;
+  valEl.textContent = sel ? sel.name : '—';
+  if (sel) {
+    const total = sel.priceBase + sel.priceAdd;
+    priceEl.textContent = total > 0 ? '+' + total.toLocaleString('sl') + ' €' : '✓';
+  } else {
+    priceEl.textContent = '—';
+  }
+}
+
+function updateTotal() {
+  let total = 0;
+  Object.values(selections).forEach(s => { total += s.priceBase + s.priceAdd; });
+  document.getElementById('totalPrice').textContent = total.toLocaleString('sl');
+}
+
+function goStep(n) {
+  if (n < 0 || n >= totalSteps) return;
+  // hide current
+  document.getElementById('step-' + currentStep).style.display = 'none';
+  document.querySelectorAll('.config-step')[currentStep]?.classList.remove('active');
+
+  currentStep = n;
+  document.getElementById('step-' + currentStep).style.display = 'block';
+
+  // update steps bar
+  document.querySelectorAll('.config-step').forEach((el, i) => {
+    el.classList.remove('active', 'done');
+    if (i < currentStep) el.classList.add('done');
+    else if (i === currentStep) el.classList.add('active');
+  });
+
+  if (n === {{ cats|length }}) buildSummaryDetails();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function buildSummaryDetails() {
+  const wrap = document.getElementById('summaryDetails');
+  if (!wrap) return;
+  let html = '<div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">';
+  html += '<div style="padding:16px 20px;border-bottom:1px solid var(--border);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);">Izbrana konfiguracija</div>';
+  let total = 0;
+  Object.entries(selections).forEach(([catId, sel]) => {
+    const catName = catData[catId]?.name || catId;
+    const linePrice = sel.priceBase + sel.priceAdd;
+    total += linePrice;
+    html += `<div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <div>
+        <div style="font-size:0.75rem;color:var(--text-3);">${catName}</div>
+        <div style="font-size:0.92rem;font-weight:600;margin-top:2px;">${sel.name}</div>
+      </div>
+      <div style="font-size:0.9rem;font-weight:700;color:var(--accent);white-space:nowrap;">${linePrice > 0 ? linePrice.toLocaleString('sl') + ' €' : 'Vključeno'}</div>
+    </div>`;
+  });
+  html += `<div style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-weight:700;">Skupaj (ocenjena cena)</div>
+    <div style="font-size:1.4rem;font-weight:800;">${total.toLocaleString('sl')} €</div>
+  </div>`;
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+function submitQuote(e) {
+  e.preventDefault();
+  // In production: send AJAX to backend
+  document.getElementById('quoteForm').style.display = 'none';
+  document.getElementById('quoteSuccess').style.display = 'block';
+}
+</script>
+{% endblock %}

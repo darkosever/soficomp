@@ -1,0 +1,52 @@
+{% extends "portal/base.html" %}
+{% block title %}Moji avtomati{% endblock %}
+{% block topbar_title %}Moji avtomati{% endblock %}
+
+{% block content %}
+{% if machines %}
+<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;">
+  {% for m in machines %}
+  {% set shelf_count = (m.shelf_config | from_json)|length %}
+  <div class="p-card" style="overflow:visible;">
+    <div class="p-card-body">
+      <div style="display:flex; align-items:start; justify-content:space-between; gap:8px; margin-bottom:12px;">
+        <div>
+          <div style="font-weight:700; font-size:1rem;">{{ m.name }}</div>
+          {% if m.serial_number %}
+          <div style="font-family:monospace; font-size:0.72rem; color:var(--text-3); margin-top:2px;">{{ m.serial_number }}</div>
+          {% endif %}
+        </div>
+        {% set sc = {'active':'var(--success)','maintenance':'var(--warning)','inactive':'var(--text-3)'} %}
+        {% set sn = {'active':'Aktiven','maintenance':'Vzdrževanje','inactive':'Neaktiven'} %}
+        <span class="status-badge" style="background:{{ sc.get(m.status,'var(--text-3)') }}1a; color:{{ sc.get(m.status,'var(--text-3)') }}; border:1px solid {{ sc.get(m.status,'var(--text-3)') }}33; font-size:0.68rem; flex-shrink:0;">
+          {{ sn.get(m.status, m.status) }}
+        </span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+        <div style="background:var(--bg-3); border-radius:8px; padding:8px 10px;">
+          <div style="font-size:0.65rem; color:var(--text-3); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Lokacija</div>
+          <div style="font-size:0.82rem; margin-top:2px;">{{ m.location or '—' }}</div>
+        </div>
+        <div style="background:var(--bg-3); border-radius:8px; padding:8px 10px;">
+          <div style="font-size:0.65rem; color:var(--text-3); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Police</div>
+          <div style="font-size:0.82rem; margin-top:2px;">{{ shelf_count }}</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <a href="{{ url_for('portal_machine_detail', machine_id=m.id) }}" class="btn btn-secondary btn-sm" style="flex:1; justify-content:center;">Podrobnosti</a>
+        <a href="{{ url_for('portal_config_request', machine_id=m.id) }}" class="btn btn-primary btn-sm" style="flex:1; justify-content:center;">Zahtevek</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="p-card">
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    <h3>Ni avtomatov</h3>
+    <p>Administrator vas bo dodal vaše avtomate.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "portal/base.html" %}
+{% block title %}Nova prijava{% endblock %}
+{% block topbar_title %}Prijava težave{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('portal_issues') }}" class="btn btn-secondary btn-sm">← Moje prijave</a>
+{% endblock %}
+
+{% block head %}
+<style>
+.prio-radio:checked + .prio-card { border-color:var(--accent)!important; background:rgba(59,130,246,0.07)!important; color:var(--accent)!important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;">
+  <div class="p-card">
+    <div class="p-card-header"><div class="p-card-title">Nova prijava težave</div></div>
+    <div class="p-card-body">
+      <form method="POST">
+        {% if machines %}
+        <div class="form-group">
+          <label class="form-label">Avtomat</label>
+          <select name="machine_id" class="form-control" id="machineSelect" onchange="fillLocation()">
+            <option value="">— Splošna prijava (brez avtomata) —</option>
+            {% for m in machines %}
+            <option value="{{ m.id }}" data-loc="{{ m.location or '' }}">
+              {{ m.name }}{% if m.location %} — {{ m.location }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label class="form-label">Lokacija</label>
+          <input type="text" name="location" class="form-control" id="locationInput"
+                 value="{{ customer.address or '' }}" placeholder="Točna lokacija avtomata">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Opis težave *</label>
+          <textarea name="description" class="form-control" rows="5" required
+                    placeholder="Podrobno opišite, kaj se dogaja. Kaj ste opazili? Kdaj se je začelo?"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Prioriteta</label>
+          <div style="display:flex; gap:10px;">
+            {% for p, pl in [('low','↓ Nizka'),('normal','→ Normalna'),('high','↑ Visoka')] %}
+            <label style="cursor:pointer; flex:1;">
+              <input type="radio" name="priority" value="{{ p }}" class="prio-radio" {% if p=='normal' %}checked{% endif %} style="display:none;">
+              <div class="prio-card" style="background:var(--bg-3); border:2px solid var(--border); border-radius:8px; padding:10px; font-weight:600; font-size:0.82rem; text-align:center; transition:var(--transition);">{{ pl }}</div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <button type="submit" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Oddaj prijavo
+          </button>
+          <a href="{{ url_for('portal_issues') }}" class="btn btn-secondary">Prekliči</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% if machines %}
+<script>
+function fillLocation() {
+  const sel = document.getElementById('machineSelect');
+  const opt = sel.options[sel.selectedIndex];
+  const loc = opt?.dataset?.loc;
+  if (loc) document.getElementById('locationInput').value = loc;
+}
+</script>
+{% endif %}
+{% endblock %}

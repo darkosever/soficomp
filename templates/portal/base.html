@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Portal{% endblock %} — SOFIComp Stranka</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%233b82f6'/><text x='50%' y='68%' font-size='18' text-anchor='middle' fill='white' font-weight='bold' font-family='Arial'>S</text></svg>">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --bg-2: #111; --bg-3: #1a1a1a; --bg-4: #222;
+      --border: #2a2a2a; --text-1: #f5f5f5; --text-2: #a3a3a3; --text-3: #555;
+      --accent: #3b82f6; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+      --radius: 10px; --transition: all 0.15s ease;
+    }
+    body { background:var(--bg); color:var(--text-1); font-family:'Inter',sans-serif; min-height:100vh; }
+
+    .portal-layout { display:flex; min-height:100vh; }
+
+    /* Sidebar */
+    .p-sidebar {
+      width:240px; background:var(--bg-2); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; position:fixed; top:0; left:0; height:100vh;
+      z-index:100; transition:transform 0.25s ease;
+    }
+    .p-sidebar-header {
+      padding:20px 20px 16px; border-bottom:1px solid var(--border);
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .p-sidebar-logo { font-size:1.1rem; font-weight:800; color:var(--text-1); }
+    .p-sidebar-logo span { color:var(--accent); }
+    .p-sidebar-company { font-size:0.72rem; color:var(--text-3); font-weight:600; letter-spacing:0.05em; text-transform:uppercase; }
+    .p-sidebar-nav { flex:1; padding:12px 8px; overflow-y:auto; display:flex; flex-direction:column; gap:2px; }
+    .p-nav-label { font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-3); padding:8px 10px 4px; }
+    .p-nav-link {
+      display:flex; align-items:center; gap:10px; padding:8px 10px;
+      border-radius:8px; color:var(--text-2); text-decoration:none;
+      font-size:0.85rem; font-weight:500; transition:var(--transition);
+    }
+    .p-nav-link svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; }
+    .p-nav-link:hover { background:var(--bg-3); color:var(--text-1); }
+    .p-nav-link.active { background:rgba(59,130,246,0.12); color:var(--accent); }
+    .p-sidebar-footer {
+      padding:14px 12px; border-top:1px solid var(--border);
+      display:flex; align-items:center; gap:10px;
+    }
+    .p-user-avatar {
+      width:32px; height:32px; border-radius:50%; background:var(--accent);
+      display:flex; align-items:center; justify-content:center;
+      font-size:0.8rem; font-weight:700; color:#fff; flex-shrink:0;
+    }
+    .p-user-name { font-size:0.78rem; font-weight:600; color:var(--text-1); flex:1; }
+    .p-logout { color:var(--text-3); transition:var(--transition); }
+    .p-logout:hover { color:var(--danger); }
+    .p-logout svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; }
+
+    /* Main content */
+    .p-main { margin-left:240px; flex:1; min-height:100vh; }
+    .p-topbar {
+      height:60px; background:var(--bg-2); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:12px; padding:0 24px;
+      position:sticky; top:0; z-index:50;
+    }
+    .p-topbar-title { font-size:1rem; font-weight:700; flex:1; }
+    .p-content { padding:24px; max-width:1000px; }
+    .mobile-menu-btn {
+      display:none; background:none; border:none; color:var(--text-1); cursor:pointer; padding:4px;
+    }
+    .mobile-menu-btn svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; }
+
+    /* Cards */
+    .p-card { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .p-card-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .p-card-title { font-size:0.9rem; font-weight:700; }
+    .p-card-body { padding:18px; }
+
+    /* Forms */
+    .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+    .form-label { font-size:0.78rem; font-weight:600; color:var(--text-2); }
+    .form-control {
+      background:var(--bg-3); border:1px solid var(--border); border-radius:8px;
+      color:var(--text-1); padding:9px 12px; font-size:0.875rem; font-family:inherit;
+      transition:var(--transition); outline:none; width:100%;
+    }
+    .form-control:focus { border-color:var(--accent); background:var(--bg-4); }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+    /* Buttons */
+    .btn {
+      display:inline-flex; align-items:center; gap:6px; padding:8px 16px;
+      border-radius:8px; font-size:0.875rem; font-weight:600; cursor:pointer;
+      border:none; text-decoration:none; transition:var(--transition); font-family:inherit;
+    }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover { background:#2563eb; }
+    .btn-secondary { background:var(--bg-3); border:1px solid var(--border); color:var(--text-1); }
+    .btn-secondary:hover { background:var(--bg-4); }
+    .btn-sm { padding:5px 12px; font-size:0.8rem; }
+    .btn-danger { background:rgba(239,68,68,0.15); color:var(--danger); border:1px solid rgba(239,68,68,0.3); }
+    .btn-danger:hover { background:rgba(239,68,68,0.25); }
+
+    /* Status badges */
+    .status-badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:100px; font-size:0.75rem; font-weight:600; }
+
+    /* Alerts */
+    .alert { padding:12px 16px; border-radius:var(--radius); font-size:0.875rem; margin-bottom:16px; }
+    .alert-success { background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); color:#86efac; }
+    .alert-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#fca5a5; }
+    .alert-info { background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2); color:#93c5fd; }
+
+    /* Table */
+    .p-table-wrap { overflow-x:auto; }
+    .p-table { width:100%; border-collapse:collapse; }
+    .p-table th, .p-table td { padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); }
+    .p-table th { font-size:0.72rem; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:0.04em; background:var(--bg-3); }
+    .p-table td { font-size:0.85rem; }
+    .p-table tbody tr:hover { background:var(--bg-3); }
+    .p-table .muted { color:var(--text-3); }
+    .p-table .primary { font-weight:600; }
+
+    /* Empty state */
+    .empty-state { text-align:center; padding:48px 24px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+    .empty-state svg { color:var(--text-3); width:40px; height:40px; }
+    .empty-state h3 { font-size:1rem; font-weight:700; }
+    .empty-state p { font-size:0.875rem; color:var(--text-3); }
+
+    /* Stat cards */
+    .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+    .stat-card { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
+    .stat-value { font-size:2rem; font-weight:800; color:var(--accent); line-height:1; }
+    .stat-label { font-size:0.78rem; color:var(--text-3); margin-top:4px; }
+
+    @media (max-width:768px) {
+      .p-sidebar { transform:translateX(-100%); }
+      .p-sidebar.mobile-open { transform:translateX(0); }
+      .p-main { margin-left:0; }
+      .mobile-menu-btn { display:flex; }
+      .form-row { grid-template-columns:1fr; }
+      .p-content { padding:16px; }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="portal-layout">
+  <aside class="p-sidebar" id="pSidebar">
+    <div class="p-sidebar-header">
+      <div class="p-sidebar-logo">SOFIComp<span>.</span></div>
+      <div class="p-sidebar-company">{{ session.customer_name or 'Portal' }}</div>
+    </div>
+    <nav class="p-sidebar-nav">
+      <div class="p-nav-label">Pregled</div>
+      <a href="{{ url_for('portal_dashboard') }}" class="p-nav-link {{ 'active' if request.endpoint=='portal_dashboard' }}">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <div class="p-nav-label">Avtomati</div>
+      <a href="{{ url_for('portal_machines') }}" class="p-nav-link {{ 'active' if request.endpoint in ['portal_machines','portal_machine_detail','portal_config_request'] }}">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Moji avtomati
+      </a>
+      <div class="p-nav-label">Prijave</div>
+      <a href="{{ url_for('portal_report_issue') }}" class="p-nav-link {{ 'active' if request.endpoint=='portal_report_issue' }}">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nova prijava
+      </a>
+      <a href="{{ url_for('portal_issues') }}" class="p-nav-link {{ 'active' if request.endpoint=='portal_issues' }}">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        Moje prijave
+      </a>
+      <div class="p-nav-label">Račun</div>
+      <a href="{{ url_for('portal_settings') }}" class="p-nav-link {{ 'active' if request.endpoint=='portal_settings' }}">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Nastavitve
+      </a>
+    </nav>
+    <div class="p-sidebar-footer">
+      <div class="p-user-avatar">{{ session.customer_name[0].upper() if session.customer_name else 'S' }}</div>
+      <div class="p-user-name">{{ session.customer_name or 'Stranka' }}</div>
+      <a href="{{ url_for('portal_logout') }}" class="p-logout" title="Odjava">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </a>
+    </div>
+  </aside>
+
+  <main class="p-main">
+    <div class="p-topbar">
+      <button class="mobile-menu-btn" id="pMobileBtn">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="p-topbar-title">{% block topbar_title %}Portal{% endblock %}</div>
+      {% block topbar_actions %}{% endblock %}
+    </div>
+    <div class="p-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category in ['success','error','info'] else 'info' }}">
+            {{ message|safe }}
+          </div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+<script>
+document.getElementById('pMobileBtn')?.addEventListener('click', () => {
+  document.getElementById('pSidebar').classList.toggle('mobile-open');
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

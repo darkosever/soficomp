@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Servis & Vzdrževanje — {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div style="padding-top:68px;">
+  <div style="background:var(--bg-1); border-bottom:1px solid var(--border); padding:72px 0 56px; text-align:center;">
+    <div class="container container-sm">
+      <div class="label" style="margin-bottom:12px;">Storitve</div>
+      <h1 style="font-size:clamp(2rem,4vw,3rem); margin-bottom:16px;">Servis & Vzdrževanje</h1>
+      <p style="color:var(--text-2); font-size:1.05rem; max-width:540px; margin:0 auto; line-height:1.75;">
+        Naša servisna ekipa skrbi za brezhibno delovanje vaših avtomatov 365 dni v letu.
+      </p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="grid-3 fade-up">
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="service-title">Odzivni čas 4 ure</div>
+          <div class="service-desc">Ob prijavi napake naš tehnik reagira v 4 urah. Za nujne primere imamo 24/7 dežurno linijo.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <div class="service-title">Preventivno vzdrževanje</div>
+          <div class="service-desc">Redni pregledi vsakih 3 mesece: čiščenje, kalibracija, pregled komponent in posodabljanje firmware.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <div class="service-title">Rezervni deli na zalogi</div>
+          <div class="service-desc">Hranimo rezervne dele za vse modele, ki jih servisiramo. Večina popravil je zaključena ob prvem obisku.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16"/><path d="M16 6v16"/></svg>
+          </div>
+          <div class="service-title">Cloud monitoring</div>
+          <div class="service-desc">Z aktivnim cloud monitoringom zaznamo napake proaktivno — preden vas sploh pokličejo stranke.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="service-title">Garancija 12 mesecev</div>
+          <div class="service-desc">Vsi aparati so pokriti z 12-mesečno garancijo. Električne napake popravljamo brez doplačila.</div>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <div class="service-title">Usposobljeni tehniki</div>
+          <div class="service-desc">Vsak tehnik je certificiran za vse modele avtomatov, ki jih ponujamo. Redno izobraževanje in usposabljanje.</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SLA Table -->
+      <div class="section-header fade-up" style="margin-bottom:40px;">
+        <div class="label">Storitveni sporazum</div>
+        <h2>Servisni paketi</h2>
+      </div>
+
+      <div class="grid-3 fade-up">
+        {% for pkg in [
+          ('Osnovno', '0 €/mes', ['12-mes. garancija', '24/7 telefonska podpora', 'Odziv v 8 urah', 'Popravilo po ceniku'], False),
+          ('Standard', '29 €/mes', ['Vse iz Osnovno', 'Odziv v 4 urah', 'Brezplačna popravila', 'Letni pregled'], True),
+          ('Premium', '79 €/mes', ['Vse iz Standard', 'Odziv v 2 urah', 'Proaktivni monitoring', 'Prednostna obravnava', 'Mesečno poročilo'], False)
+        ] %}
+        <div style="background:var(--bg-card); border:{{ '2px solid var(--accent)' if pkg[3] else '1px solid var(--border)' }}; border-radius:var(--radius-lg); padding:32px; position:relative;">
+          {% if pkg[3] %}
+          <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%); background:var(--accent); color:#fff; padding:4px 16px; border-radius:100px; font-size:0.75rem; font-weight:700; white-space:nowrap;">Priporočeno</div>
+          {% endif %}
+          <div style="font-size:1.2rem; font-weight:800; margin-bottom:8px;">{{ pkg[0] }}</div>
+          <div style="font-size:2rem; font-weight:800; color:{{ 'var(--accent)' if pkg[3] else 'var(--text)' }}; margin-bottom:24px;">{{ pkg[1] }}</div>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:10px;">
+            {% for feature in pkg[2] %}
+            <li style="display:flex; align-items:center; gap:10px; font-size:0.9rem; color:var(--text-2);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" style="color:var(--success); flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              {{ feature }}
+            </li>
+            {% endfor %}
+          </ul>
+          <a href="{{ url_for('contact') }}" class="btn {{ 'btn-accent' if pkg[3] else 'btn-secondary' }}" style="width:100%; justify-content:center; margin-top:28px;">Izberite paket</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div style="background:var(--bg-1); border-top:1px solid var(--border); padding:80px 0; text-align:center;">
+    <div class="container container-sm">
+      <h2 style="margin-bottom:16px;">Imate težavo z avtomatom?</h2>
+      <p style="color:var(--text-2); margin-bottom:32px;">Prijavite napako online in naša ekipa bo v stiku v roku 4 ur.</p>
+      <a href="{{ url_for('report_issue') }}" class="btn btn-primary btn-lg">Prijavi težavo →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

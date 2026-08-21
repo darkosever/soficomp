@@ -1,0 +1,197 @@
+{% extends "admin/base.html" %}
+{% block title %}Stanja prijav{% endblock %}
+{% block topbar_title %}Upravljanje stanj{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr 340px; gap:24px; align-items:start;">
+  <!-- List -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Obstoječa stanja</div>
+      <div style="font-size:0.78rem; color:var(--text-3);">Povlecite za spremembo vrstnega reda</div>
+    </div>
+    <div class="card-body">
+      <div class="status-list" id="statusList">
+        {% for s in statuses %}
+        <div class="status-row" data-id="{{ s.id }}">
+          <span class="drag-handle" style="color:var(--text-3);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+          </span>
+          <div class="status-dot-preview" style="background:{{ s.color }};"></div>
+          <div class="status-name">{{ s.name }}</div>
+          {% if s.is_default %}
+          <span style="background:rgba(59,130,246,0.12); color:var(--accent); padding:2px 10px; border-radius:100px; font-size:0.72rem; font-weight:700;">Privzeto</span>
+          {% endif %}
+          <div class="status-actions">
+            <button class="btn btn-secondary btn-sm btn-icon"
+                    onclick='openEditStatus({{ s.id }}, {{ s.name|tojson }}, {{ s.color|tojson }}, {{ s.is_default }})' title="Uredi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <form method="POST" style="display:inline;" onsubmit="return confirm('Izbriši stanje?')">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="id" value="{{ s.id }}">
+              <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Izbriši">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:32px; color:var(--text-3); font-size:0.875rem;">
+          Ni stanj. Dodajte prvo stanje.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="card-footer">
+      <div style="font-size:0.75rem; color:var(--text-3); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Predogled izgleda značk</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        {% for s in statuses %}
+        <span class="status-badge" style="background:{{ s.color }}1a; color:{{ s.color }}; border:1px solid {{ s.color }}33;">
+          {{ s.name }}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Add form -->
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Dodaj novo stanje</div></div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="action" value="add">
+          <div class="form-group">
+            <label class="form-label">Naziv stanja *</label>
+            <input type="text" name="name" class="form-control" required placeholder="npr. Čaka na rezervne dele">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Barva</label>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <input type="color" name="color" value="#3b82f6" id="addColor" oninput="updateColorPreview('add', this.value)">
+              <div style="display:flex; gap:6px; flex-wrap:wrap;" id="colorPresets">
+                {% for c in ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#f97316','#06b6d4','#6b7280'] %}
+                <button type="button" onclick="document.getElementById('addColor').value='{{ c }}'; updateColorPreview('add','{{ c }}')"
+                        style="width:22px;height:22px;background:{{ c }};border:2px solid transparent;border-radius:50%;cursor:pointer;padding:0;"></button>
+                {% endfor %}
+              </div>
+            </div>
+            <div style="margin-top:10px;">
+              <span class="status-badge" id="addPreview" style="background:#3b82f61a; color:#3b82f6; border:1px solid #3b82f633;">
+                Predogled
+              </span>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:20px;">
+            <label class="checkbox-wrap">
+              <input type="checkbox" name="is_default" value="1">
+              Privzeto stanje za nove prijave
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Dodaj stanje</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body" style="background:rgba(59,130,246,0.05); border-radius:var(--radius-lg);">
+        <div style="font-size:0.85rem; color:var(--text-2); line-height:1.7;">
+          <strong style="color:var(--text);">Nasvet:</strong> Stanja se dinamično prikazujejo pri vsaki prijavi. Povlecite elemente za spremembo vrstnega reda. Privzeto stanje se avtomatsko dodeli novim prijavam.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="editStatusModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Uredi stanje</div>
+      <button class="modal-close" onclick="closeEditStatus()">✕</button>
+    </div>
+    <form method="POST">
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="id" id="editStatusId">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Naziv stanja *</label>
+          <input type="text" name="name" id="editStatusName" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Barva</label>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="color" name="color" id="editStatusColor" oninput="updateColorPreview('edit', this.value)">
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              {% for c in ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#f97316','#06b6d4','#6b7280'] %}
+              <button type="button" onclick="document.getElementById('editStatusColor').value='{{ c }}'; updateColorPreview('edit','{{ c }}')"
+                      style="width:22px;height:22px;background:{{ c }};border:2px solid transparent;border-radius:50%;cursor:pointer;padding:0;"></button>
+              {% endfor %}
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <span class="status-badge" id="editPreview" style="">Predogled</span>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="checkbox-wrap">
+            <input type="checkbox" name="is_default" id="editIsDefault" value="1">
+            Privzeto stanje
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeEditStatus()">Prekliči</button>
+        <button type="submit" class="btn btn-primary">Shrani</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Sortable
+Sortable.create(document.getElementById('statusList'), {
+  handle: '.drag-handle',
+  animation: 150,
+  onEnd() {
+    const items = [...document.querySelectorAll('#statusList .status-row')].map((el, i) => ({
+      id: parseInt(el.dataset.id), order: i
+    }));
+    const fd = new FormData();
+    fd.append('action', 'reorder');
+    fd.append('order', JSON.stringify(items));
+    fetch('', { method: 'POST', body: fd }).then(() => showToast('Vrstni red shranjen', 'success'));
+  }
+});
+
+function updateColorPreview(prefix, color) {
+  const el = document.getElementById(prefix + 'Preview');
+  if (!el) return;
+  el.style.background = color + '1a';
+  el.style.color = color;
+  el.style.borderColor = color + '33';
+}
+
+function openEditStatus(id, name, color, isDefault) {
+  document.getElementById('editStatusId').value = id;
+  document.getElementById('editStatusName').value = name;
+  document.getElementById('editStatusColor').value = color;
+  document.getElementById('editIsDefault').checked = !!isDefault;
+  updateColorPreview('edit', color);
+  document.getElementById('editStatusModal').classList.add('open');
+}
+function closeEditStatus() {
+  document.getElementById('editStatusModal').classList.remove('open');
+}
+</script>
+{% endblock %}

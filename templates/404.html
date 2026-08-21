@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}404 — Stran ni najdena{% endblock %}
+{% block content %}
+<div style="min-height:80vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:80px 24px;">
+  <div>
+    <div style="font-size:6rem; font-weight:900; color:var(--border-2); letter-spacing:-0.05em; line-height:1;">404</div>
+    <h2 style="margin:16px 0 12px;">Stran ni najdena</h2>
+    <p style="color:var(--text-2); margin-bottom:32px;">Iskana stran ne obstaja ali je bila premaknjena.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">← Na začetek</a>
+  </div>
+</div>
+{% endblock %}

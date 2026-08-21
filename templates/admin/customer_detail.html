@@ -1,0 +1,165 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ customer.company_name }}{% endblock %}
+{% block topbar_title %}{{ customer.company_name }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_customers') }}" class="btn btn-secondary btn-sm">← Stranke</a>
+  <a href="{{ url_for('admin_machine_new', customer_id=customer.id) }}" class="btn btn-primary btn-sm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Dodaj avtomat
+  </a>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start;">
+  <div style="display:flex; flex-direction:column; gap:20px;">
+
+    <!-- Avtomati -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Avtomati ({{ machines|length }})</div>
+      </div>
+      {% if machines %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Naziv</th><th>Serijska</th><th>Tip</th><th>Lokacija</th><th>Status</th><th>Police</th><th></th></tr></thead>
+          <tbody>
+            {% for m in machines %}
+            <tr>
+              <td><span class="primary">{{ m.name }}</span></td>
+              <td><span class="muted" style="font-family:monospace; font-size:0.8rem;">{{ m.serial_number or '—' }}</span></td>
+              <td>
+                <span style="font-size:0.78rem; font-weight:600; color:{{ 'var(--accent)' if m.machine_type=='master' else 'var(--text-3)' }};">
+                  {{ 'Master' if m.machine_type=='master' else 'Slave' }}
+                </span>
+                {% if m.is_cooled %}<span style="margin-left:4px; font-size:0.72rem; color:#06b6d4;">❄</span>{% endif %}
+              </td>
+              <td><span class="muted">{{ m.location or '—' }}</span></td>
+              <td>
+                {% set sc = {'active':'Aktiven','maintenance':'Vzdrževanje','inactive':'Neaktiven'} %}
+                {% set scolor = {'active':'var(--success)','maintenance':'var(--warning)','inactive':'var(--text-3)'} %}
+                <span class="status-badge" style="background:{{ scolor.get(m.status,'var(--text-3)') }}1a; color:{{ scolor.get(m.status,'var(--text-3)') }}; border:1px solid {{ scolor.get(m.status,'var(--text-3)') }}33; font-size:0.72rem;">
+                  {{ sc.get(m.status, m.status) }}
+                </span>
+              </td>
+              <td>
+                {% set shelves = m.shelf_config | from_json %}
+                <span class="muted">{{ shelves|length }} polic</span>
+              </td>
+              <td style="display:flex; gap:6px;">
+                <a href="{{ url_for('admin_machine_edit', machine_id=m.id) }}" class="btn btn-secondary btn-sm">Konfiguriraj</a>
+                <form method="POST" action="{{ url_for('admin_machine_delete', machine_id=m.id) }}"
+                      onsubmit="return confirm('Izbriši avtomat?')">
+                  <button type="submit" class="btn btn-danger btn-sm btn-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+        <h3>Ni avtomatov</h3><p>Dodajte avtomat tej stranki.</p>
+        <a href="{{ url_for('admin_machine_new', customer_id=customer.id) }}" class="btn btn-primary" style="margin-top:16px;">Dodaj avtomat</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Config requests -->
+    {% if config_requests %}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Zahtevki za konfiguracijo</div>
+        <a href="{{ url_for('admin_config_requests') }}" class="btn btn-secondary btn-sm">Vsi →</a>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Naslov</th><th>Avtomat</th><th>Status</th><th>Datum</th><th></th></tr></thead>
+          <tbody>
+            {% for r in config_requests %}
+            {% set rstatus = {'pending':'Čaka','reviewing':'V pregledu','pre_install':'Pred namestitvijo','approved':'Odobren','rejected':'Zavrnjen','applied':'Apliciran'} %}
+            {% set rcolor = {'pending':'var(--warning)','reviewing':'var(--accent)','pre_install':'#06b6d4','approved':'var(--success)','rejected':'var(--danger)','applied':'var(--success)'} %}
+            <tr>
+              <td><span class="primary">{{ r.title or 'Zahtevek' }}</span></td>
+              <td><span class="muted">{{ r.machine_name or '—' }}</span></td>
+              <td>
+                <span class="status-badge" style="background:{{ rcolor.get(r.status,'var(--text-3)') }}1a; color:{{ rcolor.get(r.status,'var(--text-3)') }}; border:1px solid {{ rcolor.get(r.status,'var(--text-3)') }}33; font-size:0.72rem;">
+                  {{ rstatus.get(r.status, r.status) }}
+                </span>
+              </td>
+              <td><span class="muted">{{ r.created_at[:10] }}</span></td>
+              <td><a href="{{ url_for('admin_config_request_detail', req_id=r.id) }}" class="btn btn-secondary btn-sm">Odpri</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Sidebar -->
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Podatki stranke</div></div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="action" value="update">
+          <div class="form-group">
+            <label class="form-label">Naziv podjetja *</label>
+            <input type="text" name="company_name" class="form-control" required value="{{ customer.company_name }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kontaktna oseba</label>
+            <input type="text" name="contact_name" class="form-control" value="{{ customer.contact_name or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ customer.email or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefon</label>
+            <input type="tel" name="phone" class="form-control" value="{{ customer.phone or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Naslov</label>
+            <input type="text" name="address" class="form-control" value="{{ customer.address or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Opombe</label>
+            <textarea name="notes" class="form-control" rows="2">{{ customer.notes or '' }}</textarea>
+          </div>
+          <label class="checkbox-wrap" style="margin-bottom:16px;">
+            <input type="checkbox" name="is_active" value="1" {{ 'checked' if customer.is_active }}>
+            Aktiven dostop
+          </label>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Posodobi</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Portal dostop</div></div>
+      <div class="card-body">
+        <div style="background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:12px;">
+          <div style="font-size:0.72rem; color:var(--text-3); margin-bottom:2px;">Uporabniško ime</div>
+          <div style="font-family:monospace; font-weight:700; color:var(--accent);">{{ customer.username }}</div>
+        </div>
+        <form method="POST" onsubmit="return confirm('Generiraj novo geslo?')">
+          <input type="hidden" name="action" value="reset_password">
+          <button type="submit" class="btn btn-secondary btn-sm" style="width:100%; justify-content:center;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+            Resetiraj geslo
+          </button>
+        </form>
+        <div style="margin-top:12px; font-size:0.78rem; color:var(--text-3);">
+          <a href="{{ url_for('portal_login') }}" target="_blank" style="color:var(--accent);">Odpri portal stranke →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

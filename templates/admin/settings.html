@@ -1,0 +1,200 @@
+{% extends "admin/base.html" %}
+{% block title %}Nastavitve{% endblock %}
+{% block topbar_title %}Nastavitve spletne strani{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr; gap:24px; max-width:860px;">
+
+  <!-- General -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Splošne nastavitve</div></div>
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="form_type" value="general">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ime spletne strani</label>
+            <input type="text" name="site_name" class="form-control" value="{{ settings.site_name }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Podnaslov (tagline)</label>
+            <input type="text" name="site_tagline" class="form-control" value="{{ settings.site_tagline }}">
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Naslovna stran (hero)</div>
+        <div class="form-group">
+          <label class="form-label">Naslov (Hero H1)</label>
+          <input type="text" name="hero_title" class="form-control" value="{{ settings.hero_title }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Podnaslov (Hero subtitle)</label>
+          <textarea name="hero_subtitle" class="form-control" rows="2">{{ settings.hero_subtitle }}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Besedilo CTA gumba</label>
+          <input type="text" name="hero_cta" class="form-control" value="{{ settings.hero_cta }}">
+        </div>
+
+        <div class="divider"></div>
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Kontakt</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Telefon</label>
+            <input type="text" name="contact_phone" class="form-control" value="{{ settings.contact_phone }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" name="contact_email" class="form-control" value="{{ settings.contact_email }}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Naslov</label>
+          <input type="text" name="contact_address" class="form-control" value="{{ settings.contact_address }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Google Maps embed URL</label>
+          <input type="text" name="google_maps_embed" class="form-control" value="{{ settings.google_maps_embed }}" placeholder="https://www.google.com/maps/embed?pb=...">
+        </div>
+
+        <div class="divider"></div>
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Noga strani (Footer)</div>
+        <div class="form-group">
+          <label class="form-label">Besedilo v nogi</label>
+          <input type="text" name="footer_text" class="form-control" value="{{ settings.footer_text }}">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Telefon v nogi</label>
+            <input type="text" name="footer_phone" class="form-control" value="{{ settings.footer_phone }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email v nogi</label>
+            <input type="email" name="footer_email" class="form-control" value="{{ settings.footer_email }}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Naslov v nogi</label>
+          <input type="text" name="footer_address" class="form-control" value="{{ settings.footer_address }}">
+        </div>
+
+        <div class="divider"></div>
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Socialna omrežja</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Facebook URL</label>
+            <input type="url" name="social_facebook" class="form-control" value="{{ settings.social_facebook }}" placeholder="https://facebook.com/...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Instagram URL</label>
+            <input type="url" name="social_instagram" class="form-control" value="{{ settings.social_instagram }}" placeholder="https://instagram.com/...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">LinkedIn URL</label>
+          <input type="url" name="social_linkedin" class="form-control" value="{{ settings.social_linkedin }}" placeholder="https://linkedin.com/company/...">
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Shrani nastavitve
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Logo -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Logotip</div></div>
+    <div class="card-body">
+      {% if settings.site_logo %}
+      <div style="margin-bottom:16px;">
+        <div style="font-size:0.78rem; color:var(--text-3); margin-bottom:8px;">Trenutni logotip:</div>
+        <img src="{{ url_for('static', filename='uploads/' ~ settings.site_logo) }}" alt="Logo" style="height:48px; background:var(--bg-2); padding:8px; border-radius:var(--radius); border:1px solid var(--border);">
+      </div>
+      {% endif %}
+      <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="form_type" value="logo">
+        <div class="form-group">
+          <label class="form-label">{{ 'Zamenjaj logotip' if settings.site_logo else 'Naloži logotip' }}</label>
+          <input type="file" name="site_logo" class="form-control" accept="image/*" required>
+          <div class="form-hint">Priporočeno: SVG ali PNG s prosojnim ozadjem, min. 200px višine</div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Naloži logotip</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Partner logos -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Partnerski logotipi</div></div>
+    <div class="card-body">
+      {% if partner_logos %}
+      <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+        {% for logo in partner_logos %}
+        <div style="background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); padding:12px; display:flex; align-items:center; gap:10px;">
+          <img src="{{ url_for('static', filename='uploads/' ~ logo.image) }}" alt="{{ logo.name }}" style="height:32px; object-fit:contain; filter:brightness(0) invert(1); opacity:0.5;">
+          <span style="font-size:0.82rem; color:var(--text-2);">{{ logo.name }}</span>
+          <form method="POST" style="display:inline;" onsubmit="return confirm('Izbriši logotip?')">
+            <input type="hidden" name="form_type" value="delete_partner">
+            <input type="hidden" name="logo_id" value="{{ logo.id }}">
+            <button type="submit" class="btn btn-danger btn-sm btn-icon" style="padding:4px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="form_type" value="partner_logo">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Naziv partnerja</label>
+            <input type="text" name="partner_name" class="form-control" required placeholder="npr. Lavazza">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Slika logotipa</label>
+            <input type="file" name="partner_image" class="form-control" accept="image/*" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">URL (neobvezno)</label>
+            <input type="url" name="partner_url" class="form-control" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pozicija</label>
+            <select name="partner_section" class="form-control">
+              <option value="footer">Noga strani</option>
+              <option value="home">Naslovna stran</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Dodaj logotip</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Password change -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Sprememba gesla</div></div>
+    <div class="card-body">
+      <form method="POST" style="max-width:400px;">
+        <input type="hidden" name="form_type" value="password">
+        <div class="form-group">
+          <label class="form-label">Staro geslo</label>
+          <input type="password" name="old_password" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Novo geslo</label>
+          <input type="password" name="new_password" class="form-control" required minlength="6">
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">Spremeni geslo</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

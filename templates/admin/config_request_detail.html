@@ -1,0 +1,270 @@
+{% extends "admin/base.html" %}
+{% block title %}Zahtevek: {{ req.title or 'Brez naslova' }}{% endblock %}
+{% block topbar_title %}Zahtevek za konfiguracijo{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_config_requests') }}" class="btn btn-secondary btn-sm">← Zahtevki</a>
+{% endblock %}
+
+{% block head %}
+<style>
+.config-diff { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.config-panel { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+.config-panel-header {
+  padding:10px 14px; background:var(--bg-3); border-bottom:1px solid var(--border);
+  font-size:0.78rem; font-weight:700; color:var(--text-2); display:flex; align-items:center; gap:8px;
+}
+.shelf-row { display:flex; align-items:start; gap:10px; padding:10px 14px; border-bottom:1px solid var(--border); }
+.shelf-row:last-child { border-bottom:none; }
+.shelf-type-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:4px; }
+.slot-chips { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
+.slot-chip { font-size:0.65rem; padding:1px 6px; border-radius:100px; background:var(--bg-3); border:1px solid var(--border); color:var(--text-2); }
+.action-btn {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  width:100%; padding:8px; border-radius:8px; font-size:0.8rem; font-weight:600;
+  cursor:pointer; border:none; font-family:inherit; text-decoration:none; transition:var(--transition);
+}
+.visual-compare { display:flex; flex-direction:column; gap:2px; border-radius:6px; padding:5px; min-height:60px; }
+.visual-bar { border-radius:3px; display:flex; align-items:center; padding-left:6px; font-size:0.58rem; font-weight:700; min-height:18px; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set all_statuses = [
+  ('pending','Čaka','var(--warning)'),
+  ('reviewing','V pregledu','var(--accent)'),
+  ('pre_install','Potrjeno pred namestitvijo','#06b6d4'),
+  ('approved','Odobren','var(--success)'),
+  ('rejected','Zavrnjen','var(--danger)'),
+  ('applied','Apliciran','var(--success)'),
+] %}
+{% set status_map = {
+  'pending':('Čaka','var(--warning)'),
+  'reviewing':('V pregledu','var(--accent)'),
+  'pre_install':('Potrjeno pred namestitvijo','#06b6d4'),
+  'approved':('Odobren','var(--success)'),
+  'rejected':('Zavrnjen','var(--danger)'),
+  'applied':('Apliciran','var(--success)'),
+} %}
+{% set cur_label = status_map.get(req.status, (req.status, 'var(--text-3)')) %}
+
+<div style="display:grid; grid-template-columns:1fr 300px; gap:24px; align-items:start;">
+  <div style="display:flex; flex-direction:column; gap:20px;">
+
+    <!-- Header -->
+    <div class="card">
+      <div class="card-body" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <h2 style="font-size:1.1rem; font-weight:700; margin:0; flex:1;">{{ req.title or 'Brez naslova' }}</h2>
+          <span class="status-badge" style="background:{{ cur_label[1] }}1a; color:{{ cur_label[1] }}; border:1px solid {{ cur_label[1] }}33; font-size:0.78rem;">
+            {{ cur_label[0] }}
+          </span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-3); margin-bottom:2px;">Stranka</div>
+            <div style="font-size:0.875rem; font-weight:600;">{{ req.company_name or '—' }}</div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-3); margin-bottom:2px;">Avtomat</div>
+            <div style="font-size:0.875rem; font-weight:600;">{{ req.machine_name or '—' }}</div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-3); margin-bottom:2px;">Datum</div>
+            <div style="font-size:0.875rem;">{{ req.created_at[:10] }}</div>
+          </div>
+        </div>
+        {% if req.description %}
+        <div style="background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); padding:12px; font-size:0.875rem; color:var(--text-2);">
+          {{ req.description }}
+        </div>
+        {% endif %}
+        {% if req.admin_note %}
+        <div style="background:rgba(59,130,246,0.05); border:1px solid rgba(59,130,246,0.15); border-radius:var(--radius); padding:10px 12px; font-size:0.82rem; color:var(--text-2);">
+          <span style="font-weight:600; color:var(--accent);">Admin opomba:</span> {{ req.admin_note }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Config comparison -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Primerjava konfiguracij</div></div>
+      <div class="card-body" style="display:flex; flex-direction:column; gap:16px;">
+
+        <!-- Visual comparison -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <div style="font-size:0.7rem; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Trenutna</div>
+            <div class="visual-compare" style="background:var(--bg-2); border:1px solid var(--border);" id="vcCurrent"></div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Predlagana</div>
+            <div class="visual-compare" style="background:var(--bg-2); border:1px solid rgba(59,130,246,0.3);" id="vcProposed"></div>
+          </div>
+        </div>
+
+        <!-- Detail tables -->
+        <div class="config-diff">
+          <div class="config-panel">
+            <div class="config-panel-header">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--text-3);"></div>
+              Trenutna konfiguracija avtomata
+            </div>
+            {% set cur = req.current_config | from_json if req.current_config else [] %}
+            {% if cur %}
+              {% for s in cur %}
+              {% set dc = '#3b82f6' if 'belt' in s.type else ('#22c55e' if s.type=='spiral-10' else '#8b5cf6') %}
+              <div class="shelf-row">
+                <div class="shelf-type-dot" style="background:{{ dc }};"></div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:0.78rem; font-weight:600;">{{ s.type }} <span style="color:var(--text-3);">· {{ s.heightPct }}%</span></div>
+                  <div class="slot-chips">
+                    {% set key = 'beltGroups' if 'belt' in s.type else 'spiralSlots' %}
+                    {% for sl in s[key] if sl.product is defined and sl.product %}
+                    <span class="slot-chip">{{ sl.position }}: {{ sl.product }}</span>
+                    {% else %}
+                    <span style="font-size:0.65rem; color:var(--text-3);">Ni produktov</span>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div style="padding:16px; color:var(--text-3); font-size:0.78rem; text-align:center;">Prazna konfiguracija</div>
+            {% endif %}
+          </div>
+
+          <div class="config-panel">
+            <div class="config-panel-header" style="color:var(--accent);">
+              <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>
+              Predlagana konfiguracija
+            </div>
+            {% set prop = req.config_data | from_json if req.config_data else [] %}
+            {% if prop %}
+              {% for s in prop %}
+              {% set dc = '#3b82f6' if 'belt' in s.type else ('#22c55e' if s.type=='spiral-10' else '#8b5cf6') %}
+              <div class="shelf-row">
+                <div class="shelf-type-dot" style="background:{{ dc }};"></div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:0.78rem; font-weight:600;">{{ s.type }} <span style="color:var(--text-3);">· {{ s.heightPct }}%</span></div>
+                  <div class="slot-chips">
+                    {% set key = 'beltGroups' if 'belt' in s.type else 'spiralSlots' %}
+                    {% for sl in s[key] if sl.product is defined and sl.product %}
+                    <span class="slot-chip">{{ sl.position }}: {{ sl.product }}</span>
+                    {% else %}
+                    <span style="font-size:0.65rem; color:var(--text-3);">Ni produktov</span>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div style="padding:16px; color:var(--text-3); font-size:0.78rem; text-align:center;">Prazna konfiguracija</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Actions sidebar -->
+  <div style="position:sticky; top:84px; display:flex; flex-direction:column; gap:16px;">
+
+    <!-- Status workflow -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Status zahtevka</div></div>
+      <div class="card-body" style="display:flex; flex-direction:column; gap:8px;">
+
+        {% if req.status not in ('applied', 'rejected') %}
+        <!-- Apply button - primary action -->
+        <form method="POST" onsubmit="return confirm('Aplicirati predlagano konfiguracijo na avtomat? Trenutna bo prepisana.')">
+          <input type="hidden" name="action" value="apply">
+          <button type="submit" class="action-btn" style="background:var(--success); color:#fff; margin-bottom:4px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+            Apliciraj na avtomat
+          </button>
+        </form>
+        <div style="height:1px; background:var(--border); margin:2px 0;"></div>
+        {% endif %}
+
+        <!-- Status buttons -->
+        {% set flow = [
+          ('reviewing','V pregledu','var(--accent)'),
+          ('pre_install','Potrjeno pred namestitvijo','#06b6d4'),
+          ('approved','Odobren','var(--success)'),
+          ('rejected','Zavrnjen','var(--danger)'),
+        ] %}
+        {% for s_val, s_label, s_color in flow %}
+        {% if req.status != s_val %}
+        <form method="POST">
+          <input type="hidden" name="action" value="set_status">
+          <input type="hidden" name="status" value="{{ s_val }}">
+          <button type="submit" class="action-btn" style="background:{{ s_color }}15; color:{{ s_color }}; border:1px solid {{ s_color }}33;">
+            {{ s_label }}
+          </button>
+        </form>
+        {% else %}
+        <div style="background:{{ s_color }}15; border:1px solid {{ s_color }}33; border-radius:8px; padding:8px; text-align:center; font-size:0.8rem; font-weight:700; color:{{ s_color }};">
+          ✓ {{ s_label }}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Admin note -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Admin opomba</div></div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="action" value="save_note">
+          <textarea name="admin_note" class="form-control" rows="4"
+                    placeholder="Interna opomba (vidna stranki)...">{{ req.admin_note or '' }}</textarea>
+          <button type="submit" class="btn btn-secondary btn-sm" style="width:100%; justify-content:center; margin-top:8px;">Shrani opombo</button>
+        </form>
+      </div>
+    </div>
+
+    {% if req.customer_email %}
+    <div class="card">
+      <div class="card-body" style="font-size:0.82rem;">
+        <div style="color:var(--text-3); margin-bottom:4px;">Kontakt stranke</div>
+        <a href="mailto:{{ req.customer_email }}" style="color:var(--accent);">{{ req.customer_email }}</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const typeColors = {
+  'belt-10':'rgba(59,130,246,0.4)','belt-6':'rgba(59,130,246,0.3)',
+  'spiral-10':'rgba(34,197,94,0.4)','spiral-10-double':'rgba(139,92,246,0.4)',
+};
+const typeLabels = {'belt-10':'Belt 10','belt-6':'Belt 6','spiral-10':'Spiral 10','spiral-10-double':'Spiral 10×2'};
+
+function renderVisual(shelves, containerId) {
+  const el = document.getElementById(containerId);
+  if (!shelves || !shelves.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:0.65rem;padding:12px 0;">Prazno</div>';
+    return;
+  }
+  const total = shelves.reduce((s,sh)=>s+(sh.heightPct||10),0);
+  el.innerHTML = shelves.map(s=>{
+    const pct = ((s.heightPct||10)/Math.max(total,100)*100).toFixed(1);
+    return `<div class="visual-bar" style="flex:${s.heightPct||10}; min-height:18px; background:${typeColors[s.type]||'rgba(99,102,241,0.3)'};">
+      <span style="color:rgba(255,255,255,0.8); font-size:0.58rem;">${typeLabels[s.type]||s.type}</span>
+    </div>`;
+  }).join('');
+}
+
+const curConfig = {{ req.current_config | from_json | tojson if req.current_config else '[]' }};
+const propConfig = {{ req.config_data | from_json | tojson if req.config_data else '[]' }};
+renderVisual(curConfig, 'vcCurrent');
+renderVisual(propConfig, 'vcProposed');
+</script>
+{% endblock %}

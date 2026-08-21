@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}{{ site.site_name }} — {{ site.site_tagline }}{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span></span>
+      Pametne rešitve za samopostrežno prodajo
+    </div>
+    <h1>{{ site.hero_title }}</h1>
+    <p class="hero-sub">{{ site.hero_subtitle }}</p>
+    <div class="hero-actions">
+      <a href="{{ url_for('configurator') }}" class="btn btn-primary btn-lg">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        {{ site.hero_cta }}
+      </a>
+      <a href="{{ url_for('products') }}" class="btn btn-outline btn-lg">Ogled avtomatov</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">500<span>+</span></div>
+        <div class="hero-stat-label">Instaliranih avtomatov</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">24<span>/7</span></div>
+        <div class="hero-stat-label">Servisna podpora</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">12<span>mes</span></div>
+        <div class="hero-stat-label">Garancija</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">98<span>%</span></div>
+        <div class="hero-stat-label">Zadovoljnih strank</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES STRIP -->
+<div class="features-strip">
+  <div class="container">
+    <div class="grid-4" style="gap:32px;">
+      <div class="feature-item fade-up">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div class="feature-text">
+          <strong>Hitra dobava</strong>
+          Dostava in instalacija v roku 5 dni
+        </div>
+      </div>
+      <div class="feature-item fade-up">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="feature-text">
+          <strong>12-mesečna garancija</strong>
+          Na vse aparate in komponente
+        </div>
+      </div>
+      <div class="feature-item fade-up">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16"/><path d="M16 6v16"/></svg>
+        </div>
+        <div class="feature-text">
+          <strong>Cloud monitoring</strong>
+          Živi pregled zaloge in stanja
+        </div>
+      </div>
+      <div class="feature-item fade-up">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="feature-text">
+          <strong>Vsa plačila</strong>
+          Gotovina, kartice, NFC / Apple Pay
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCTS PREVIEW -->
+<section class="section">
+  <div class="container">
+    <div class="section-header fade-up">
+      <div class="label">Naši produkti</div>
+      <h2>Avtomati za vsako potrebo</h2>
+      <p>Od kompaktnih pisarniških rešitev do visoko zmogljivih avtomatov za prometna mesta.</p>
+    </div>
+    <div class="grid-4 fade-up">
+      <!-- Kava -->
+      <div class="product-card" onclick="location.href='{{ url_for('products') }}'">
+        <div class="product-img placeholder-img">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+          <span>Kava & topli napitki</span>
+        </div>
+        <div class="product-info">
+          <div class="product-name">Kava & topli napitki</div>
+          <div class="product-desc">Espresso, cappuccino, čaj — do 300 napitkov dnevno.</div>
+          <div class="product-price">od 2.490 €<span>/ mesečno leasing</span></div>
+          <div class="product-specs">
+            <span class="spec-tag">8–12 napitkov</span>
+            <span class="spec-tag">Touch screen</span>
+          </div>
+        </div>
+      </div>
+      <!-- Prigrizki -->
+      <div class="product-card" onclick="location.href='{{ url_for('products') }}'">
+        <div class="product-img placeholder-img">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Prigrizki & hrana</span>
+        </div>
+        <div class="product-info">
+          <div class="product-name">Prigrizki & hrana</div>
+          <div class="product-desc">40+ slotov za čips, čokolado, sendviče in pijačo.</div>
+          <div class="product-price">od 2.190 €</div>
+          <div class="product-specs">
+            <span class="spec-tag">40+ slotov</span>
+            <span class="spec-tag">Hlajenje opcijsko</span>
+          </div>
+        </div>
+      </div>
+      <!-- Kombiniran -->
+      <div class="product-card" onclick="location.href='{{ url_for('products') }}'">
+        <div class="product-img placeholder-img">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          <span>Kombiniran avtomat</span>
+        </div>
+        <div class="product-info">
+          <div class="product-name">Kombiniran avtomat</div>
+          <div class="product-desc">Kava + prigrizki v enem aparatu — idealno za manjše prostore.</div>
+          <div class="product-price">od 3.290 €</div>
+          <div class="product-specs">
+            <span class="spec-tag">2-v-1</span>
+            <span class="spec-tag">Prihranek prostora</span>
+          </div>
+        </div>
+      </div>
+      <!-- Hladne pijače -->
+      <div class="product-card" onclick="location.href='{{ url_for('products') }}'">
+        <div class="product-img placeholder-img">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64"><path d="M8 2h8l-2 6H10L8 2z"/><path d="M10 8a4 4 0 100 8 4 4 0 000-8z"/><path d="M10 16v4M14 16v4"/></svg>
+          <span>Hladne pijače</span>
+        </div>
+        <div class="product-info">
+          <div class="product-name">Hladne pijače</div>
+          <div class="product-desc">Voda, sokovi, energijske pijače — vedno sveže ohlajene.</div>
+          <div class="product-price">od 1.890 €</div>
+          <div class="product-specs">
+            <span class="spec-tag">+4°C</span>
+            <span class="spec-tag">do 200 enot</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:40px;">
+      <a href="{{ url_for('products') }}" class="btn btn-outline btn-lg">Vsi produkti →</a>
+    </div>
+  </div>
+</section>
+
+<!-- WHY US -->
+<section class="section" style="background:var(--bg-1); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+  <div class="container">
+    <div class="section-header fade-up">
+      <div class="label">Zakaj SOFIComp</div>
+      <h2>Vsa rešitev na enem mestu</h2>
+      <p>Od svetovanja in izbire do instalacije, vzdrževanja in 24/7 podpore.</p>
+    </div>
+    <div class="grid-3 fade-up">
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+        </div>
+        <div class="service-title">Cloud telemetrija</div>
+        <div class="service-desc">Živi pregled stanja aparata, zaloge in prodaje — kadarkoli, od kjerkoli, prek spletnega dashboarda.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        </div>
+        <div class="service-title">Servis isti dan</div>
+        <div class="service-desc">Naša servisna ekipa reagira v roku 4 ur. 24/7 telefonska linija za nujne primere — brez čakanja.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div class="service-title">Fleksibilno financiranje</div>
+        <div class="service-desc">Leasing in kreditne možnosti za vse aparate. Začnete brez velikih začetnih stroškov.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="service-title">Moderna plačila</div>
+        <div class="service-desc">Gotovina, Visa/Mastercard, Apple Pay, Google Pay. NFC terminal z manj kot 2s transakcijskim časom.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="service-title">Garancija 12 mesecev</div>
+        <div class="service-desc">Polna garancija na vse aparate in električne komponente. Brezplačna zamenjava delov.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        </div>
+        <div class="service-title">Prilagodljiv branding</div>
+        <div class="service-desc">Od logo nalepk do polnega custom wrapa — aparat nosil bo vašo blagovno znamko.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONFIGURATOR CTA -->
+<section class="cta-section">
+  <div class="container container-sm">
+    <div class="label" style="margin-bottom:16px;">Konfigurator</div>
+    <h2>Ustvarite vaš idealni avtomat</h2>
+    <p>Izberite tip, kapaciteto, plačilni sistem in branding — in prejmite ponudbo v 24 urah.</p>
+    <div class="cta-actions">
+      <a href="{{ url_for('configurator') }}" class="btn btn-primary btn-lg">Začni konfiguracijo →</a>
+      <a href="{{ url_for('contact') }}" class="btn btn-outline btn-lg">Pogovorite se z nami</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Navbar scroll effect
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// Fade up animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+{% endblock %}

@@ -1,0 +1,446 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ machine.name if machine else 'Nov avtomat' }}{% endblock %}
+{% block topbar_title %}{{ machine.name if machine else 'Nov avtomat' }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_customer_detail', customer_id=customer.id) }}" class="btn btn-secondary btn-sm">← {{ customer.company_name }}</a>
+{% endblock %}
+
+{% block head %}
+<style>
+.shelf-list { display:flex; flex-direction:column; gap:12px; }
+.shelf-card {
+  background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+  overflow:hidden; transition:var(--transition);
+}
+.shelf-card.dragging { opacity:0.4; }
+.shelf-header {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; background:var(--bg-3); border-bottom:1px solid var(--border);
+  cursor:grab; user-select:none;
+}
+.shelf-header:active { cursor:grabbing; }
+.shelf-drag-handle { color:var(--text-3); flex-shrink:0; }
+.shelf-type-badge {
+  font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:4px;
+  background:rgba(59,130,246,0.15); color:var(--accent);
+}
+.shelf-body { padding:14px; display:flex; flex-direction:column; gap:12px; }
+.shelf-meta { display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end; }
+.slots-grid { display:grid; gap:6px; }
+.slots-grid.belt-10 { grid-template-columns:repeat(10,1fr); }
+.slots-grid.belt-6 { grid-template-columns:repeat(6,1fr); }
+.slots-grid.spiral-10 { grid-template-columns:repeat(10,1fr); }
+.slots-grid.spiral-10-double { grid-template-columns:repeat(10,1fr); }
+.slot-cell {
+  background:var(--bg-3); border:1px solid var(--border); border-radius:6px;
+  padding:6px 4px; display:flex; flex-direction:column; align-items:center; gap:3px;
+  transition:var(--transition); min-width:0;
+}
+.slot-cell:hover { border-color:var(--accent); }
+.slot-label { font-size:0.62rem; color:var(--text-3); font-weight:600; }
+.slot-input {
+  width:100%; background:transparent; border:none; color:var(--text-1);
+  font-size:0.7rem; text-align:center; padding:2px 0; outline:none;
+}
+.slot-input::placeholder { color:var(--text-3); }
+.slot-input:focus { color:var(--accent); }
+.height-bar-wrap { display:flex; align-items:center; gap:8px; }
+.height-bar { flex:1; height:6px; background:var(--bg-3); border-radius:3px; overflow:hidden; }
+.height-bar-fill { height:100%; background:var(--accent); border-radius:3px; transition:width 0.2s; }
+.add-shelf-btn {
+  border:2px dashed var(--border); background:transparent; border-radius:var(--radius);
+  padding:14px; color:var(--text-3); font-size:0.875rem; cursor:pointer;
+  width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:var(--transition);
+}
+.add-shelf-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(59,130,246,0.04); }
+.shelf-type-picker {
+  display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:16px;
+  background:var(--bg-1); border:1px solid var(--border); border-radius:var(--radius);
+}
+.type-option {
+  background:var(--bg-2); border:2px solid var(--border); border-radius:8px;
+  padding:12px 10px; cursor:pointer; text-align:center; transition:var(--transition);
+}
+.type-option:hover { border-color:var(--accent); }
+.type-option .type-icon { font-size:1.4rem; margin-bottom:4px; }
+.type-option .type-name { font-size:0.78rem; font-weight:700; color:var(--text-1); }
+.type-option .type-desc { font-size:0.68rem; color:var(--text-3); margin-top:2px; }
+.visual-machine {
+  display:flex; flex-direction:column; gap:2px;
+  background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:8px; min-height:120px;
+}
+.visual-shelf {
+  border-radius:4px; display:flex; align-items:center; justify-content:center;
+  font-size:0.65rem; color:var(--text-1); font-weight:600; transition:height 0.3s;
+  position:relative;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr 280px; gap:24px; align-items:start;">
+
+  <!-- Main form -->
+  <div class="card">
+    <div class="card-body">
+      <form method="POST" id="machineForm">
+        <input type="hidden" name="shelf_config" id="shelfConfigInput">
+
+        <!-- Basic info -->
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Podatki avtomata</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Naziv *</label>
+            <input type="text" name="name" class="form-control" required
+                   value="{{ machine.name if machine else '' }}" placeholder="npr. Avtomat 1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Serijska številka</label>
+            <input type="text" name="serial_number" class="form-control" style="font-family:monospace;"
+                   value="{{ machine.serial_number or '' if machine else '' }}" placeholder="SOF-2024-001">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tip avtomata</label>
+            <select name="machine_type" class="form-control" id="machineTypeSelect" onchange="updateTypeUI()">
+              <option value="master" {{ 'selected' if machine and machine.machine_type=='master' }}>Master</option>
+              <option value="slave" {{ 'selected' if machine and machine.machine_type=='slave' }}>Slave (satelit)</option>
+            </select>
+          </div>
+          <div class="form-group" id="connectedToGroup" style="{{ 'display:none' if not machine or machine.machine_type!='slave' else '' }}">
+            <label class="form-label">Povezan z masterom</label>
+            <select name="connected_to" class="form-control">
+              <option value="">— Izberi master —</option>
+              {% for m in masters %}
+              <option value="{{ m.id }}" {{ 'selected' if machine and machine.connected_to==m.id }}>{{ m.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Lokacija</label>
+            <input type="text" name="location" class="form-control"
+                   value="{{ machine.location or '' if machine else '' }}" placeholder="npr. 1. nadstropje, hodnik">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-control">
+              {% for s, sl in [('active','Aktiven'),('maintenance','Vzdrževanje'),('inactive','Neaktiven')] %}
+              <option value="{{ s }}" {{ 'selected' if machine and machine.status==s else ('selected' if not machine and s=='active') }}>{{ sl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Datum namestitve</label>
+            <input type="date" name="installed_at" class="form-control"
+                   value="{{ machine.installed_at[:10] if machine and machine.installed_at else '' }}">
+          </div>
+          <div class="form-group" style="display:flex; align-items:center; gap:8px; padding-top:26px;">
+            <label class="checkbox-wrap">
+              <input type="checkbox" name="is_cooled" value="1" {{ 'checked' if machine and machine.is_cooled }}>
+              Hlajen avtomat ❄
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Opombe</label>
+          <textarea name="notes" class="form-control" rows="2"
+                    placeholder="Interno...">{{ machine.notes or '' if machine else '' }}</textarea>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Shelf configurator -->
+        <div class="editor-sidebar-label" style="margin-bottom:4px;">Konfiguracija polic</div>
+        <div style="font-size:0.78rem; color:var(--text-3); margin-bottom:16px;">
+          Dodajte police in jim dodelite produkte. Skupno: <strong id="heightTotal">0</strong>% višine (max 100%).
+        </div>
+
+        <div class="shelf-list" id="shelfList"></div>
+
+        <button type="button" class="add-shelf-btn" onclick="showTypeMenu()" style="margin-top:12px;" id="addShelfBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Dodaj polico
+        </button>
+
+        <!-- Type picker (hidden by default) -->
+        <div id="typePicker" style="display:none; margin-top:8px;">
+          <div class="shelf-type-picker">
+            <div class="type-option" onclick="addShelf('belt-10')">
+              <div class="type-icon">▬▬▬▬▬▬▬▬▬▬</div>
+              <div class="type-name">Belt 10</div>
+              <div class="type-desc">Tekoče blago, 10 stez</div>
+            </div>
+            <div class="type-option" onclick="addShelf('belt-6')">
+              <div class="type-icon">▬▬▬▬▬▬</div>
+              <div class="type-name">Belt 6</div>
+              <div class="type-desc">Tekoče blago, 6 stez</div>
+            </div>
+            <div class="type-option" onclick="addShelf('spiral-10')">
+              <div class="type-icon">⊚⊚⊚⊚⊚⊚⊚⊚⊚⊚</div>
+              <div class="type-name">Spiral 10</div>
+              <div class="type-desc">Spiralni mehanizem, 10 stolpcev</div>
+            </div>
+            <div class="type-option" onclick="addShelf('spiral-10-double')">
+              <div class="type-icon">⊚⊚⊚⊚⊚⊚⊚⊚⊚⊚</div>
+              <div class="type-name">Spiral 10 Double</div>
+              <div class="type-desc">Dvojni spiralni, 10 stolpcev</div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="hideTypeMenu()" style="margin-top:6px;">Prekliči</button>
+        </div>
+
+        <div class="divider"></div>
+        <button type="submit" class="btn btn-primary btn-lg" onclick="serializeShelves()">
+          {{ 'Posodobi avtomat' if machine else 'Dodaj avtomat' }}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Preview sidebar -->
+  <div style="position:sticky; top:84px; display:flex; flex-direction:column; gap:16px;">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Vizualni pregled</div></div>
+      <div class="card-body">
+        <div class="visual-machine" id="visualMachine">
+          <div style="text-align:center; color:var(--text-3); font-size:0.75rem; padding:20px 0;">Ni polic</div>
+        </div>
+        <div style="margin-top:10px; font-size:0.75rem; color:var(--text-3);">
+          <div id="previewStats">0 polic · 0% zasedeno</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Legenda</div></div>
+      <div class="card-body" style="font-size:0.75rem; color:var(--text-3); display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:16px; height:10px; background:rgba(59,130,246,0.4); border-radius:2px; flex-shrink:0;"></div>
+          Belt 10 / Belt 6
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:16px; height:10px; background:rgba(34,197,94,0.4); border-radius:2px; flex-shrink:0;"></div>
+          Spiral 10
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:16px; height:10px; background:rgba(139,92,246,0.4); border-radius:2px; flex-shrink:0;"></div>
+          Spiral 10 Double
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let shelves = {{ (machine.shelf_config | from_json) | tojson if machine else '[]' }};
+let dragSrc = null;
+
+const typeColors = {
+  'belt-10': 'rgba(59,130,246,0.4)',
+  'belt-6': 'rgba(59,130,246,0.3)',
+  'spiral-10': 'rgba(34,197,94,0.4)',
+  'spiral-10-double': 'rgba(139,92,246,0.4)',
+};
+const typeLabels = {
+  'belt-10': 'Belt 10', 'belt-6': 'Belt 6',
+  'spiral-10': 'Spiral 10', 'spiral-10-double': 'Spiral 10 Double',
+};
+const typeSlots = { 'belt-10': 10, 'belt-6': 6, 'spiral-10': 10, 'spiral-10-double': 10 };
+
+function slotKey(type) {
+  return type.startsWith('belt') ? 'beltGroups' : 'spiralSlots';
+}
+
+function makeDefaultSlots(type) {
+  const n = typeSlots[type];
+  const key = slotKey(type);
+  const arr = Array.from({length: n}, (_, i) => ({ position: i + 1, product: '', count: type.startsWith('belt') ? 1 : 0 }));
+  return { [key]: arr };
+}
+
+function addShelf(type) {
+  hideTypeMenu();
+  const id = 'shelf-' + Date.now();
+  const slots = makeDefaultSlots(type);
+  shelves.push({ id, type, heightPct: 20, ...slots });
+  renderAll();
+}
+
+function removeShelf(id) {
+  shelves = shelves.filter(s => s.id !== id);
+  renderAll();
+}
+
+function showTypeMenu() {
+  document.getElementById('typePicker').style.display = 'block';
+  document.getElementById('addShelfBtn').style.display = 'none';
+}
+function hideTypeMenu() {
+  document.getElementById('typePicker').style.display = 'none';
+  document.getElementById('addShelfBtn').style.display = 'flex';
+}
+
+function updateHeight(id, val) {
+  const s = shelves.find(s => s.id === id);
+  if (s) { s.heightPct = parseInt(val) || 10; updateVisual(); updateHeightTotal(); }
+}
+
+function updateProduct(id, pos, val) {
+  const s = shelves.find(s => s.id === id);
+  if (!s) return;
+  const key = slotKey(s.type);
+  const slot = s[key]?.find(sl => sl.position === pos);
+  if (slot) slot.product = val;
+}
+
+function renderShelf(shelf, idx) {
+  const key = slotKey(shelf.type);
+  const slots = shelf[key] || [];
+  const n = typeSlots[shelf.type];
+  const isDouble = shelf.type === 'spiral-10-double';
+
+  let slotsHTML = '';
+  for (let i = 0; i < n; i++) {
+    const slot = slots[i] || { position: i+1, product: '' };
+    const pos = i + 1;
+    slotsHTML += `
+      <div class="slot-cell" title="Pozicija ${pos}">
+        <div class="slot-label">${pos}</div>
+        <input class="slot-input" type="text" placeholder="—" maxlength="20"
+               value="${slot.product || ''}"
+               oninput="updateProduct('${shelf.id}',${pos},this.value)"
+               title="Produkt na poziciji ${pos}">
+      </div>`;
+    if (isDouble) {
+      const slot2 = slots[n + i] || { position: n + i + 1, product: '' };
+      slotsHTML += `
+        <div class="slot-cell" title="Pozicija ${n+i+1} (spodaj)">
+          <div class="slot-label">${n+i+1}b</div>
+          <input class="slot-input" type="text" placeholder="—" maxlength="20"
+                 value="${slot2.product || ''}"
+                 oninput="updateProduct('${shelf.id}',${n+i+1},this.value)"
+                 title="Produkt na poziciji ${n+i+1}">
+        </div>`;
+    }
+  }
+
+  const gridClass = shelf.type.replace(/-double$/, '') + (isDouble ? ' double' : '');
+  const gridStyle = isDouble ? `grid-template-columns:repeat(${n},1fr) repeat(${n},1fr)` : '';
+
+  return `
+    <div class="shelf-card" id="card-${shelf.id}" draggable="true"
+         ondragstart="dragStart(event,'${shelf.id}')" ondragover="dragOver(event,'${shelf.id}')" ondrop="drop(event,'${shelf.id}')" ondragend="dragEnd()">
+      <div class="shelf-header">
+        <svg class="shelf-drag-handle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+        <span style="font-weight:700; font-size:0.875rem; flex:1;">Polica ${idx + 1}</span>
+        <span class="shelf-type-badge">${typeLabels[shelf.type]}</span>
+        <button type="button" onclick="removeShelf('${shelf.id}')"
+                class="btn btn-danger btn-sm btn-icon" style="margin-left:4px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="shelf-body">
+        <div class="shelf-meta">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:0.7rem;">Višina (%)</label>
+            <input type="range" min="5" max="50" step="5" value="${shelf.heightPct}"
+                   oninput="updateHeight('${shelf.id}',this.value); document.getElementById('hval-${shelf.id}').textContent=this.value+'%'"
+                   style="width:100%; accent-color:var(--accent);">
+          </div>
+          <div style="padding-top:22px; font-size:0.875rem; font-weight:700; color:var(--accent); min-width:40px; text-align:center;" id="hval-${shelf.id}">${shelf.heightPct}%</div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem; color:var(--text-3); margin-bottom:6px; font-weight:600;">PRODUKTI PO POZICIJAH</div>
+          <div class="slots-grid ${shelf.type}" ${gridStyle ? 'style="'+gridStyle+'"' : ''}>
+            ${slotsHTML}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderAll() {
+  const list = document.getElementById('shelfList');
+  if (!shelves.length) {
+    list.innerHTML = '';
+  } else {
+    list.innerHTML = shelves.map((s, i) => renderShelf(s, i)).join('');
+  }
+  updateVisual();
+  updateHeightTotal();
+}
+
+function updateVisual() {
+  const vm = document.getElementById('visualMachine');
+  const stats = document.getElementById('previewStats');
+  if (!shelves.length) {
+    vm.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:0.75rem;padding:20px 0;">Ni polic</div>';
+    stats.textContent = '0 polic · 0% zasedeno';
+    return;
+  }
+  const total = shelves.reduce((s, sh) => s + (sh.heightPct || 10), 0);
+  vm.innerHTML = shelves.map(s => {
+    const pct = ((s.heightPct || 10) / Math.max(total, 100) * 100).toFixed(1);
+    const label = typeLabels[s.type];
+    return `<div class="visual-shelf" style="height:${pct}%; min-height:22px; background:${typeColors[s.type]}; border:1px solid ${typeColors[s.type].replace('0.4','0.7')};">
+      <span style="font-size:0.62rem;">${label}</span>
+    </div>`;
+  }).join('');
+  const filled = Math.min(total, 100);
+  stats.textContent = `${shelves.length} polic · ${filled}% zasedeno`;
+}
+
+function updateHeightTotal() {
+  const total = shelves.reduce((s, sh) => s + (sh.heightPct || 10), 0);
+  const el = document.getElementById('heightTotal');
+  el.textContent = total;
+  el.style.color = total > 100 ? 'var(--danger)' : 'var(--text-1)';
+}
+
+function serializeShelves() {
+  document.getElementById('shelfConfigInput').value = JSON.stringify(shelves);
+}
+
+// Drag and drop reorder
+function dragStart(e, id) {
+  dragSrc = id;
+  e.dataTransfer.effectAllowed = 'move';
+  document.getElementById('card-' + id)?.classList.add('dragging');
+}
+function dragOver(e, id) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+function drop(e, targetId) {
+  e.preventDefault();
+  if (!dragSrc || dragSrc === targetId) return;
+  const fromIdx = shelves.findIndex(s => s.id === dragSrc);
+  const toIdx = shelves.findIndex(s => s.id === targetId);
+  const moved = shelves.splice(fromIdx, 1)[0];
+  shelves.splice(toIdx, 0, moved);
+  renderAll();
+}
+function dragEnd() {
+  dragSrc = null;
+  document.querySelectorAll('.shelf-card.dragging').forEach(el => el.classList.remove('dragging'));
+}
+
+function updateTypeUI() {
+  const type = document.getElementById('machineTypeSelect').value;
+  document.getElementById('connectedToGroup').style.display = type === 'slave' ? '' : 'none';
+}
+
+// Initial render
+renderAll();
+</script>
+{% endblock %}

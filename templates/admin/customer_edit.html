@@ -1,0 +1,80 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Uredi stranko' if customer else 'Nova stranka' }}{% endblock %}
+{% block topbar_title %}{{ 'Uredi stranko' if customer else 'Nova stranka' }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_customers') }}" class="btn btn-secondary btn-sm">← Nazaj</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:700px;">
+  <div class="card">
+    <div class="card-body">
+      <form method="POST">
+        {% if customer %}<input type="hidden" name="action" value="update">{% endif %}
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Podatki podjetja</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Naziv podjetja *</label>
+            <input type="text" name="company_name" class="form-control" required value="{{ customer.company_name if customer else '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ime kontaktne osebe</label>
+            <input type="text" name="contact_name" class="form-control" value="{{ customer.contact_name if customer else '' }}">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ customer.email if customer else '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefon</label>
+            <input type="tel" name="phone" class="form-control" value="{{ customer.phone if customer else '' }}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Naslov</label>
+          <input type="text" name="address" class="form-control" value="{{ customer.address if customer else '' }}">
+        </div>
+
+        <div class="divider"></div>
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Dostop do strankinega portala</div>
+
+        {% if not customer %}
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Uporabniško ime *</label>
+            <input type="text" name="username" class="form-control" required placeholder="npr. abc-doo"
+                   oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9\-_]/g,'')">
+            <div class="form-hint">Samo male črke, številke, - in _</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Geslo</label>
+            <input type="text" name="password" class="form-control" placeholder="Pusti prazno za naključno geslo">
+            <div class="form-hint">Ob ustvaritvi bo geslo prikazano samo enkrat</div>
+          </div>
+        </div>
+        {% else %}
+        <div style="background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;">
+          <div style="font-size:0.78rem; color:var(--text-3); margin-bottom:4px;">Uporabniško ime</div>
+          <div style="font-family:monospace; font-weight:700; color:var(--accent);">{{ customer.username }}</div>
+        </div>
+        <label class="checkbox-wrap" style="margin-bottom:16px;">
+          <input type="checkbox" name="is_active" value="1" {{ 'checked' if customer.is_active }}>
+          Stranka ima aktiven dostop do portala
+        </label>
+        {% endif %}
+
+        <div class="form-group">
+          <label class="form-label">Interne opombe</label>
+          <textarea name="notes" class="form-control" rows="3" placeholder="Interno...">{{ customer.notes if customer else '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg">
+          {{ 'Posodobi stranko' if customer else 'Ustvari stranko' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

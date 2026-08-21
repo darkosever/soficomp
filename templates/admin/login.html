@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin prijava — SOFIComp</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;">
+  <div style="width:100%; max-width:380px;">
+    <div style="text-align:center; margin-bottom:32px;">
+      <div style="font-size:1.5rem; font-weight:900; letter-spacing:-0.03em; margin-bottom:6px;">SOFIComp<span style="color:var(--accent);">.</span></div>
+      <div style="font-size:0.85rem; color:var(--text-3);">Admin panel — prijavite se</div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        {% if error %}
+        <div class="alert alert-error" style="margin-bottom:20px;">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+          <div class="form-group">
+            <label class="form-label">Uporabniško ime</label>
+            <input type="text" name="username" class="form-control" required autofocus
+                   placeholder="admin" value="{{ request.form.get('username','') }}">
+          </div>
+          <div class="form-group" style="margin-bottom:24px;">
+            <label class="form-label">Geslo</label>
+            <input type="password" name="password" class="form-control" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">
+            Prijava
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:20px;">
+      <a href="{{ url_for('index') }}" style="font-size:0.82rem; color:var(--text-3);">← Na spletno stran</a>
+    </div>
+  </div>
+</body>
+</html>

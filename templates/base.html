@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ site.site_name }}{% endblock %} | {{ site.site_name }}</title>
+  <meta name="description" content="{% block meta_desc %}{{ site.site_tagline }}{% endblock %}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%233b82f6'/><text x='50%' y='68%' font-size='18' text-anchor='middle' fill='white' font-weight='bold' font-family='Arial'>S</text></svg>">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <a href="{{ url_for('index') }}" class="nav-logo">
+    {% if site.site_logo %}
+      <img src="{{ url_for('static', filename='uploads/' ~ site.site_logo) }}" alt="{{ site.site_name }}">
+    {% else %}
+      {{ site.site_name }}<span>.</span>
+    {% endif %}
+  </a>
+
+  <ul class="nav-links">
+    {% for item in nav_items %}
+      <li>
+        <a href="{{ item.url or ('#') }}"
+           class="{{ 'active' if request.path == item.url else '' }}"
+           {% if item.target == '_blank' %}target="_blank"{% endif %}>
+          {{ item.label }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <div class="nav-actions">
+    <a href="{{ url_for('report_issue') }}" class="btn btn-outline btn-sm">Prijavi težavo</a>
+    <a href="{{ url_for('configurator') }}" class="btn btn-primary btn-sm">Konfiguriraj</a>
+  </div>
+
+  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+</nav>
+
+<!-- MOBILE NAV -->
+<div class="nav-mobile" id="mobileNav">
+  {% for item in nav_items %}
+    <a href="{{ item.url or '#' }}" {% if item.target == '_blank' %}target="_blank"{% endif %}>
+      {{ item.label }}
+    </a>
+  {% endfor %}
+  <div style="margin-top:24px; display:flex; flex-direction:column; gap:12px;">
+    <a href="{{ url_for('report_issue') }}" class="btn btn-outline">Prijavi težavo</a>
+    <a href="{{ url_for('configurator') }}" class="btn btn-accent">Konfiguriraj avtomat</a>
+  </div>
+</div>
+
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div style="position:fixed;top:80px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:380px">
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category if category in ['success','error','info'] else 'info' }}" style="box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+          {{ message|safe }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- CONTENT -->
+{% block content %}{% endblock %}
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          {% if site.site_logo %}
+            <img src="{{ url_for('static', filename='uploads/' ~ site.site_logo) }}" alt="{{ site.site_name }}" style="height:28px;">
+          {% else %}
+            {{ site.site_name }}<span>.</span>
+          {% endif %}
+        </div>
+        <p>{{ site.site_tagline }}<br>Zanesljive rešitve za samopostrežno prodajo.</p>
+        {% if site.social_facebook or site.social_instagram or site.social_linkedin %}
+        <div class="footer-social">
+          {% if site.social_facebook %}
+          <a href="{{ site.social_facebook }}" class="social-link" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+          </a>
+          {% endif %}
+          {% if site.social_instagram %}
+          <a href="{{ site.social_instagram }}" class="social-link" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
+          {% endif %}
+          {% if site.social_linkedin %}
+          <a href="{{ site.social_linkedin }}" class="social-link" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="footer-col">
+        <h4>Storitve</h4>
+        <ul>
+          <li><a href="{{ url_for('products') }}">Produkti</a></li>
+          <li><a href="{{ url_for('configurator') }}">Konfigurator</a></li>
+          <li><a href="{{ url_for('service') }}">Servis & Vzdrževanje</a></li>
+          <li><a href="{{ url_for('report_issue') }}">Prijava težave</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Podjetje</h4>
+        <ul>
+          <li><a href="{{ url_for('about') }}">O nas</a></li>
+          <li><a href="{{ url_for('contact') }}">Kontakt</a></li>
+          {% for item in footer_items %}
+            <li><a href="{{ item.url or '#' }}" {% if item.target == '_blank' %}target="_blank"{% endif %}>{{ item.label }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Kontakt</h4>
+        {% if site.footer_phone %}
+        <div class="footer-contact-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          <span>{{ site.footer_phone }}</span>
+        </div>
+        {% endif %}
+        {% if site.footer_email %}
+        <div class="footer-contact-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>{{ site.footer_email }}</span>
+        </div>
+        {% endif %}
+        {% if site.footer_address %}
+        <div class="footer-contact-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>{{ site.footer_address }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>{{ site.footer_text }}</p>
+      <p style="color:var(--text-3);font-size:0.8rem;">Made with precision in Slovenia</p>
+    </div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

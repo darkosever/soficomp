@@ -1,0 +1,180 @@
+{% extends "admin/base.html" %}
+{% block title %}Nova prijava{% endblock %}
+{% block topbar_title %}Ročno ustvari prijavo{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_issues') }}" class="btn btn-secondary btn-sm">← Nazaj</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:820px;">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Nova prijava (admin)</div>
+        <div style="font-size:0.78rem; color:var(--text-3); margin-top:2px;">Ročno ustvari prijavo za stranko, ki te je npr. poklicala.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+
+        <div class="divider" style="margin:0 0 20px;"></div>
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Stranka in lokacija</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Naziv podjetja *</label>
+            <input type="text" name="company_name" class="form-control" required placeholder="ABC d.o.o."
+                   id="companyNameInput">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lokacija avtomata *</label>
+            <input type="text" name="location" class="form-control" required placeholder="Ljubljana, Tržaška 25">
+          </div>
+        </div>
+
+        {% if customers %}
+        <div class="form-group">
+          <label class="form-label">Ali je stranka že v sistemu? (neobvezno)</label>
+          <select class="form-control" id="customerPicker" onchange="fillFromCustomer(this)">
+            <option value="">— Izberi obstoječo stranko —</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}" data-name="{{ c.company_name }}">{{ c.company_name }}{% if c.contact_name %} ({{ c.contact_name }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ID / Serijska številka avtomata</label>
+            <input type="text" name="machine_id" class="form-control" placeholder="npr. SOF-2024-001" id="machineIdInput">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tip avtomata</label>
+            <select name="machine_type" class="form-control">
+              <option value="">— Izberite —</option>
+              {% for t in ['Kava & topli napitki','Prigrizki & hrana','Kombiniran avtomat','Hladne pijače','Drugo'] %}
+              <option>{{ t }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        {% if machines %}
+        <div class="form-group">
+          <label class="form-label">Ali je avtomat iz sistema? (neobvezno)</label>
+          <select class="form-control" onchange="fillFromMachine(this)">
+            <option value="">— Izberi obstoječ avtomat —</option>
+            {% for m in machines %}
+            <option value="{{ m.id }}" data-serial="{{ m.serial_number }}" data-name="{{ m.name }}" data-company="{{ m.company_name }}">
+              {{ m.company_name }} — {{ m.name }} {% if m.serial_number %}({{ m.serial_number }}){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <div class="divider" style="margin:20px 0;"></div>
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Opis težave</div>
+
+        <div class="form-group">
+          <label class="form-label">Opis *</label>
+          <textarea name="description" class="form-control" rows="5" required
+                    placeholder="Podrobno opišite težavo..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Prioriteta</label>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            {% for p, pl in [('low','↓ Nizka'),('normal','→ Normalna'),('high','↑ Visoka')] %}
+            <label style="cursor:pointer; flex:1; min-width:120px;">
+              <input type="radio" name="priority" value="{{ p }}" {% if p=='normal' %}checked{% endif %} style="display:none;" class="prio-radio">
+              <div class="prio-card" style="background:var(--bg-2); border:2px solid var(--border); border-radius:var(--radius); padding:12px 16px; font-weight:600; font-size:0.875rem; text-align:center; transition:var(--transition);">{{ pl }}</div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Začetni status</label>
+          <select name="status_id" class="form-control">
+            {% for s in statuses %}
+            <option value="{{ s.id }}" {{ 'selected' if s.is_default }}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="divider" style="margin:20px 0;"></div>
+        <div class="editor-sidebar-label" style="margin-bottom:16px;">Kontakt stranke</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ime kontakta</label>
+            <input type="text" name="contact_name" class="form-control" placeholder="Ime Priimek" id="contactNameInput">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" name="contact_email" class="form-control" placeholder="email@..." id="contactEmailInput">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Telefon</label>
+            <input type="tel" name="contact_phone" class="form-control" placeholder="+386..." id="contactPhoneInput">
+          </div>
+        </div>
+
+        <div class="divider" style="margin:20px 0;"></div>
+        <div class="form-group">
+          <label class="form-label">Interne opombe (vidno samo adminu)</label>
+          <textarea name="admin_notes" class="form-control" rows="3" placeholder="npr. Stranka je klicala ob 14:00..."></textarea>
+        </div>
+
+        <div style="display:flex; gap:12px;">
+          <button type="submit" class="btn btn-primary btn-lg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Ustvari prijavo
+          </button>
+          <a href="{{ url_for('admin_issues') }}" class="btn btn-secondary btn-lg">Prekliči</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+input[type="radio"].prio-radio:checked + .prio-card { border-color: var(--accent); background: rgba(59,130,246,0.07); color: var(--accent); }
+</style>
+
+{% if customers %}
+<script>
+const customerData = {
+  {% for c in customers %}
+  {{ c.id }}: { company: {{ c.company_name|tojson }}, name: {{ (c.contact_name or '')|tojson }} },
+  {% endfor %}
+};
+function fillFromCustomer(sel) {
+  const d = customerData[sel.value];
+  if (!d) return;
+  document.getElementById('companyNameInput').value = d.company;
+  if (d.name) document.getElementById('contactNameInput').value = d.name;
+}
+</script>
+{% endif %}
+
+{% if machines %}
+<script>
+const machineData = {
+  {% for m in machines %}
+  {{ m.id }}: { serial: {{ (m.serial_number or '')|tojson }}, name: {{ m.name|tojson }}, company: {{ m.company_name|tojson }} },
+  {% endfor %}
+};
+function fillFromMachine(sel) {
+  const d = machineData[sel.value];
+  if (!d) return;
+  document.getElementById('machineIdInput').value = d.serial || d.name;
+  document.getElementById('companyNameInput').value = d.company;
+}
+</script>
+{% endif %}
+{% endblock %}

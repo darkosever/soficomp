@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }}{% endblock %}
+{% block meta_desc %}{{ page.meta_description or page.title }}{% endblock %}
+
+{% block content %}
+<div class="page-content" style="padding-top:120px;">
+  <h1>{{ page.title }}</h1>
+  <div class="page-meta">Posodobljeno: {{ page.updated_at[:10] }}</div>
+  <div class="richtext">{{ page.content|safe }}</div>
+</div>
+{% endblock %}

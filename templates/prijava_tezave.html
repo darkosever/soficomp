@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Prijava težave — {{ site.site_name }}{% endblock %}
+
+{% block content %}
+<div style="padding-top:68px;">
+  <!-- HERO -->
+  <div style="background:var(--bg-1); border-bottom:1px solid var(--border); padding:72px 0 56px; text-align:center;">
+    <div class="container container-sm">
+      <div class="label" style="margin-bottom:12px;">Podpora</div>
+      <h1 style="font-size:clamp(2rem,4vw,3rem); margin-bottom:16px;">Prijava težave</h1>
+      <p style="color:var(--text-2); font-size:1.05rem; line-height:1.75; max-width:520px; margin:0 auto;">
+        Imate težavo z avtomatom? Izpolnite spodnji obrazec in naša servisna ekipa vas bo kontaktirala <strong style="color:var(--text)">v roku 4 ur</strong>.
+      </p>
+    </div>
+  </div>
+
+  <section class="section-sm">
+    <div class="container container-sm">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category if category in ['success','error','info'] else 'info' }}" style="margin-bottom:28px; font-size:1rem; padding:20px 28px; border-radius:12px;">
+            {{ message|safe }}
+          </div>
+        {% endfor %}
+      {% endwith %}
+
+      <!-- INFO CARDS -->
+      <div class="grid-3" style="margin-bottom:48px;">
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
+          <div style="font-size:1.8rem; margin-bottom:8px;">⚡</div>
+          <div style="font-weight:700; margin-bottom:6px;">Hiter odziv</div>
+          <div style="font-size:0.85rem; color:var(--text-2);">Odgovorimo v 4 urah delovnega dne</div>
+        </div>
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
+          <div style="font-size:1.8rem; margin-bottom:8px;">🔧</div>
+          <div style="font-weight:700; margin-bottom:6px;">Servis na terenu</div>
+          <div style="font-size:0.85rem; color:var(--text-2);">Prihod tehnika isti ali naslednji delovni dan</div>
+        </div>
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center;">
+          <div style="font-size:1.8rem; margin-bottom:8px;">📞</div>
+          <div style="font-weight:700; margin-bottom:6px;">24/7 telefon</div>
+          <div style="font-size:0.85rem; color:var(--text-2);"><a href="tel:{{ site.footer_phone }}" style="color:var(--accent);">{{ site.footer_phone }}</a></div>
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div style="background:var(--bg-1); border:1px solid var(--border); border-radius:var(--radius-xl); padding:40px 48px;">
+        <form method="POST" action="{{ url_for('report_issue') }}">
+
+          <div style="margin-bottom:32px;">
+            <div class="label" style="margin-bottom:12px;">Podatki o podjetju</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Naziv podjetja *</label>
+                <input type="text" name="company_name" class="form-control" required
+                       placeholder="npr. ABC d.o.o." value="{{ request.form.get('company_name','') }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Lokacija avtomata *</label>
+                <input type="text" name="location" class="form-control" required
+                       placeholder="npr. Ljubljana, Tržaška 25" value="{{ request.form.get('location','') }}">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">ID / Serijska št. avtomata</label>
+                <input type="text" name="machine_id" class="form-control"
+                       placeholder="npr. SOF-2024-001" value="{{ request.form.get('machine_id','') }}">
+                <div style="font-size:0.78rem; color:var(--text-3); margin-top:5px;">Najdete jo na nalepki na aparatu</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tip avtomata</label>
+                <select name="machine_type" class="form-control">
+                  <option value="">— Izberite tip —</option>
+                  {% for t in machine_types %}
+                    <option value="{{ t }}" {{ 'selected' if request.form.get('machine_type') == t }}>{{ t }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:32px;">
+            <div class="label" style="margin-bottom:12px;">Opis težave</div>
+            <div class="form-group">
+              <label class="form-label">Podrobno opišite težavo *</label>
+              <textarea name="description" class="form-control" rows="5" required
+                        placeholder="Opišite, kaj se dogaja z avtomatom. Npr: Aparat ne sprejema kovancev, zaslon je temen, produkt se ne izvrže...">{{ request.form.get('description','') }}</textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Prioriteta</label>
+              <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                {% for p, pl, pd in [('low', 'Nizka', 'Avtomat deluje, manjša motnja'), ('normal', 'Normalna', 'Delno ovira delovanje'), ('high', 'Visoka', 'Avtomat ne deluje')] %}
+                <label style="flex:1; min-width:140px; cursor:pointer;">
+                  <input type="radio" name="priority" value="{{ p }}" style="display:none;"
+                         {% if request.form.get('priority', 'normal') == p %}checked{% endif %}>
+                  <div class="priority-option priority-{{ p }}" style="background:var(--bg-card); border:2px solid var(--border); border-radius:var(--radius-lg); padding:14px; transition:var(--transition);">
+                    <div style="font-weight:700; font-size:0.9rem;">{{ pl }}</div>
+                    <div style="font-size:0.78rem; color:var(--text-2); margin-top:3px;">{{ pd }}</div>
+                  </div>
+                </label>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:32px;">
+            <div class="label" style="margin-bottom:12px;">Kontaktni podatki</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Vaše ime *</label>
+                <input type="text" name="contact_name" class="form-control" required
+                       placeholder="Ime in priimek" value="{{ request.form.get('contact_name','') }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email *</label>
+                <input type="email" name="contact_email" class="form-control" required
+                       placeholder="email@podjetje.si" value="{{ request.form.get('contact_email','') }}">
+              </div>
+            </div>
+            <div class="form-group" style="max-width:50%;">
+              <label class="form-label">Telefonska številka</label>
+              <input type="tel" name="contact_phone" class="form-control"
+                     placeholder="+386 ..." value="{{ request.form.get('contact_phone','') }}">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%; justify-content:center;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Oddaj prijavo
+          </button>
+
+          <p style="text-align:center; font-size:0.82rem; color:var(--text-3); margin-top:16px;">
+            Z oddajo se strinjate z obdelavo podatkov za namene servisne podpore.
+          </p>
+        </form>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<style>
+input[type="radio"]:checked + .priority-option {
+  border-color: var(--accent) !important;
+  background: rgba(59,130,246,0.07) !important;
+}
+.priority-option:hover {
+  border-color: var(--border-2) !important;
+}
+@media (max-width: 640px) {
+  .container-sm form > div:nth-child(n) .form-row { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}

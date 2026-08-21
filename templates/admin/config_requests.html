@@ -1,0 +1,51 @@
+{% extends "admin/base.html" %}
+{% block title %}Zahtevki za konfiguracijo{% endblock %}
+{% block topbar_title %}Zahtevki za konfiguracijo{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Vsi zahtevki</div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      {% for s, sl in [('','Vsi'),('pending','Čaka'),('reviewing','V pregledu'),('pre_install','Pred namestitvijo'),('approved','Odobren'),('rejected','Zavrnjen'),('applied','Apliciran')] %}
+      <a href="?status={{ s }}" class="btn btn-sm {{ 'btn-primary' if status_filter==s else 'btn-secondary' }}">{{ sl }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% if requests %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Naslov</th><th>Stranka</th><th>Avtomat</th><th>Status</th><th>Datum</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in requests %}
+        {% set rstatus = {'pending':'Čaka','reviewing':'V pregledu','pre_install':'Pred namestitvijo','approved':'Odobren','rejected':'Zavrnjen','applied':'Apliciran'} %}
+        {% set rcolor = {'pending':'var(--warning)','reviewing':'var(--accent)','pre_install':'#06b6d4','approved':'var(--success)','rejected':'var(--danger)','applied':'var(--success)'} %}
+        <tr>
+          <td><span class="primary">{{ r.title or 'Brez naslova' }}</span></td>
+          <td><span class="muted">{{ r.company_name or '—' }}</span></td>
+          <td><span class="muted">{{ r.machine_name or '—' }}</span></td>
+          <td>
+            <span class="status-badge" style="background:{{ rcolor.get(r.status,'var(--text-3)') }}1a; color:{{ rcolor.get(r.status,'var(--text-3)') }}; border:1px solid {{ rcolor.get(r.status,'var(--text-3)') }}33; font-size:0.72rem;">
+              {{ rstatus.get(r.status, r.status) }}
+            </span>
+          </td>
+          <td><span class="muted">{{ r.created_at[:10] }}</span></td>
+          <td><a href="{{ url_for('admin_config_request_detail', req_id=r.id) }}" class="btn btn-secondary btn-sm">Odpri</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+    <h3>Ni zahtevkov</h3>
+    <p>Ko stranke pošljejo zahtevke za konfiguracijo, se bodo prikazali tukaj.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

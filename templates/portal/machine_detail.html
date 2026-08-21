@@ -1,0 +1,141 @@
+{% extends "portal/base.html" %}
+{% block title %}{{ machine.name }}{% endblock %}
+{% block topbar_title %}{{ machine.name }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('portal_machines') }}" class="btn btn-secondary btn-sm">← Avtomati</a>
+  <a href="{{ url_for('portal_config_request', machine_id=machine.id) }}" class="btn btn-primary btn-sm">Pošlji zahtevek</a>
+{% endblock %}
+
+{% block head %}
+<style>
+.shelf-visual {
+  display:flex; flex-direction:column; gap:3px;
+  background:var(--bg-3); border:1px solid var(--border); border-radius:8px;
+  padding:8px; min-height:80px;
+}
+.shelf-bar {
+  border-radius:4px; padding:4px 8px; display:flex; align-items:center;
+  justify-content:space-between; gap:8px; min-height:24px;
+}
+.shelf-slots { display:flex; flex-wrap:wrap; gap:3px; }
+.shelf-slot {
+  font-size:0.6rem; padding:1px 5px; background:rgba(255,255,255,0.08);
+  border-radius:3px; color:var(--text-2); max-width:70px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr 280px; gap:20px; align-items:start;">
+  <div style="display:flex; flex-direction:column; gap:16px;">
+
+    <!-- Info -->
+    <div class="p-card">
+      <div class="p-card-header"><div class="p-card-title">Podatki avtomata</div></div>
+      <div class="p-card-body">
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+          {% for label, val in [
+            ('Serijska številka', machine.serial_number or '—'),
+            ('Lokacija', machine.location or '—'),
+            ('Tip', 'Master' if machine.machine_type=='master' else 'Slave'),
+            ('Nameščen', machine.installed_at[:10] if machine.installed_at else '—'),
+          ] %}
+          <div>
+            <div style="font-size:0.7rem; color:var(--text-3); font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px;">{{ label }}</div>
+            <div style="font-size:0.875rem;">{{ val }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Shelf config visualization -->
+    {% set shelves = machine.shelf_config | from_json %}
+    {% if shelves %}
+    <div class="p-card">
+      <div class="p-card-header"><div class="p-card-title">Konfiguracija polic ({{ shelves|length }})</div></div>
+      <div class="p-card-body">
+        <div class="shelf-visual">
+          {% for s in shelves %}
+          {% set bg = 'rgba(59,130,246,0.25)' if 'belt' in s.type else ('rgba(34,197,94,0.25)' if s.type=='spiral-10' else 'rgba(139,92,246,0.25)') %}
+          <div class="shelf-bar" style="background:{{ bg }}; flex:{{ s.heightPct or 15 }};">
+            <span style="font-size:0.7rem; font-weight:700; color:var(--text-1);">{{ s.type }}</span>
+            <div class="shelf-slots">
+              {% set key = 'beltGroups' if 'belt' in s.type else 'spiralSlots' %}
+              {% if s[key] is defined %}
+                {% for slot in s[key] if slot.product %}
+                <div class="shelf-slot" title="P{{ slot.position }}: {{ slot.product }}">{{ slot.product }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Config requests history -->
+    {% if requests %}
+    <div class="p-card">
+      <div class="p-card-header"><div class="p-card-title">Zahtevki za konfiguracijo</div></div>
+      <div class="p-table-wrap">
+        <table class="p-table">
+          <thead><tr><th>Naslov</th><th>Status</th><th>Datum</th></tr></thead>
+          <tbody>
+            {% for r in requests %}
+            {% set rstatus = {'pending':'Čaka','reviewing':'V pregledu','pre_install':'Potrjeno pred namestitvijo','approved':'Odobren','rejected':'Zavrnjen','applied':'Apliciran'} %}
+            {% set rcolor = {'pending':'var(--warning)','reviewing':'var(--accent)','pre_install':'#06b6d4','approved':'var(--success)','rejected':'var(--danger)','applied':'var(--success)'} %}
+            <tr>
+              <td>
+                <span class="primary">{{ r.title or 'Brez naslova' }}</span>
+                {% if r.admin_note %}
+                <div style="font-size:0.72rem; color:var(--text-3); margin-top:2px;">{{ r.admin_note }}</div>
+                {% endif %}
+              </td>
+              <td>
+                <span class="status-badge" style="background:{{ rcolor.get(r.status,'var(--text-3)') }}1a; color:{{ rcolor.get(r.status,'var(--text-3)') }}; border:1px solid {{ rcolor.get(r.status,'var(--text-3)') }}33; font-size:0.68rem;">
+                  {{ rstatus.get(r.status, r.status) }}
+                </span>
+              </td>
+              <td><span class="muted">{{ r.created_at[:10] }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Sidebar actions -->
+  <div style="position:sticky; top:76px; display:flex; flex-direction:column; gap:12px;">
+    <div class="p-card">
+      <div class="p-card-header"><div class="p-card-title">Hitro</div></div>
+      <div class="p-card-body" style="display:flex; flex-direction:column; gap:8px;">
+        <a href="{{ url_for('portal_config_request', machine_id=machine.id) }}" class="btn btn-primary" style="justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Pošlji zahtevek za konfig.
+        </a>
+        <a href="{{ url_for('portal_report_issue') }}" class="btn btn-secondary" style="justify-content:center;">Prijavi težavo</a>
+      </div>
+    </div>
+
+    {% set sc = {'active':'var(--success)','maintenance':'var(--warning)','inactive':'var(--text-3)'} %}
+    {% set sn = {'active':'Aktiven','maintenance':'Vzdrževanje','inactive':'Neaktiven'} %}
+    <div class="p-card">
+      <div class="p-card-body" style="text-align:center;">
+        <div style="font-size:0.7rem; color:var(--text-3); margin-bottom:8px;">Status</div>
+        <span class="status-badge" style="background:{{ sc.get(machine.status,'var(--text-3)') }}1a; color:{{ sc.get(machine.status,'var(--text-3)') }}; border:1px solid {{ sc.get(machine.status,'var(--text-3)') }}33;">
+          {{ sn.get(machine.status, machine.status) }}
+        </span>
+        {% if machine.is_cooled %}
+        <div style="margin-top:8px; font-size:0.78rem; color:#06b6d4;">❄ Hlajen avtomat</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

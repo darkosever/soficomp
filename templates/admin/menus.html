@@ -1,0 +1,218 @@
+{% extends "admin/base.html" %}
+{% block title %}Meniji{% endblock %}
+{% block topbar_title %}Upravljanje menijev{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+  {% for menu_id, data in menu_data.items() %}
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">{{ data.menu.name }}</div>
+        <div style="font-size:0.78rem; color:var(--text-3); margin-top:2px;">Pozicija: {{ data.menu.location }}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openAddModal({{ menu_id }})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Dodaj element
+      </button>
+    </div>
+    <div class="card-body">
+      <ul class="menu-list" id="menuList-{{ menu_id }}">
+        {% for item in data.menu_items %}
+        <li class="menu-item" data-id="{{ item.id }}" data-menu="{{ menu_id }}">
+          <span class="drag-handle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+          </span>
+          <div style="flex:1; min-width:0;">
+            <div class="menu-item-label">{{ item.label }}</div>
+            <div class="menu-item-url">{{ item.url or ('→ ' + (item.page_title or '')) }}</div>
+          </div>
+          <div class="menu-item-actions">
+            <button class="btn btn-secondary btn-sm btn-icon" title="Uredi"
+                    onclick='editItem({{ item.id }}, {{ item.label|tojson }}, {{ (item.url or "")|tojson }}, {{ (item.target or "_self")|tojson }})'>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn btn-danger btn-sm btn-icon" title="Izbriši"
+                    onclick="deleteItem({{ item.id }}, this.closest('li'))">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+            </button>
+          </div>
+        </li>
+        {% else %}
+        <li style="text-align:center; padding:28px; color:var(--text-3); font-size:0.875rem;" id="emptyMsg-{{ menu_id }}">
+          Ni elementov. Dodajte prvi element.
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Add item modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Dodaj element v meni</div>
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="addMenuId">
+      <div class="form-group">
+        <label class="form-label">Oznaka (besedilo v meniju) *</label>
+        <input type="text" id="addLabel" class="form-control" placeholder="npr. O nas">
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL *</label>
+        <input type="text" id="addUrl" class="form-control" placeholder="npr. /o-nas ali https://...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Odpri v</label>
+        <select id="addTarget" class="form-control">
+          <option value="_self">Isto okno</option>
+          <option value="_blank">Novo okno</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Ali poveži na obstoječo stran?</label>
+        <select id="addPageId" class="form-control">
+          <option value="">— Ročni URL (zgoraj) —</option>
+          {% for page in pages %}
+          <option value="{{ page.id }}" data-slug="/stran/{{ page.slug }}">{{ page.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeAddModal()">Prekliči</button>
+      <button class="btn btn-primary" onclick="submitAdd()">Dodaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit item modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Uredi element</div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editItemId">
+      <div class="form-group">
+        <label class="form-label">Oznaka *</label>
+        <input type="text" id="editLabel" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL</label>
+        <input type="text" id="editUrl" class="form-control">
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Odpri v</label>
+        <select id="editTarget" class="form-control">
+          <option value="_self">Isto okno</option>
+          <option value="_blank">Novo okno</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Prekliči</button>
+      <button class="btn btn-primary" onclick="submitEdit()">Shrani</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Drag-drop reorder
+document.querySelectorAll('[id^="menuList-"]').forEach(list => {
+  const menuId = list.id.split('-')[1];
+  Sortable.create(list, {
+    handle: '.drag-handle',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    onEnd() {
+      const items = [...list.querySelectorAll('.menu-item[data-id]')].map((el, i) => ({
+        id: parseInt(el.dataset.id), order: i
+      }));
+      fetch('/admin/meniji/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(items)
+      }).then(() => showToast('Vrstni red shranjen', 'success'));
+    }
+  });
+});
+
+// Add modal
+function openAddModal(menuId) {
+  document.getElementById('addMenuId').value = menuId;
+  document.getElementById('addLabel').value = '';
+  document.getElementById('addUrl').value = '';
+  document.getElementById('addTarget').value = '_self';
+  document.getElementById('addPageId').value = '';
+  document.getElementById('addModal').classList.add('open');
+  setTimeout(() => document.getElementById('addLabel').focus(), 100);
+}
+function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+
+document.getElementById('addPageId').addEventListener('change', function() {
+  const opt = this.selectedOptions[0];
+  if (opt.dataset.slug) document.getElementById('addUrl').value = opt.dataset.slug;
+});
+
+function submitAdd() {
+  const label = document.getElementById('addLabel').value.trim();
+  const url = document.getElementById('addUrl').value.trim();
+  if (!label || !url) { showToast('Vnesi oznako in URL', 'error'); return; }
+  fetch('/admin/meniji/item/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      menu_id: document.getElementById('addMenuId').value,
+      label, url,
+      target: document.getElementById('addTarget').value,
+      page_id: document.getElementById('addPageId').value || null,
+    })
+  }).then(() => { closeAddModal(); location.reload(); });
+}
+
+// Edit modal
+function editItem(id, label, url, target) {
+  document.getElementById('editItemId').value = id;
+  document.getElementById('editLabel').value = label;
+  document.getElementById('editUrl').value = url;
+  document.getElementById('editTarget').value = target;
+  document.getElementById('editModal').classList.add('open');
+  setTimeout(() => document.getElementById('editLabel').focus(), 100);
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+
+function submitEdit() {
+  const id = document.getElementById('editItemId').value;
+  fetch(`/admin/meniji/item/${id}/edit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      label: document.getElementById('editLabel').value.trim(),
+      url: document.getElementById('editUrl').value.trim(),
+      target: document.getElementById('editTarget').value,
+    })
+  }).then(() => { closeEditModal(); location.reload(); });
+}
+
+// Delete
+function deleteItem(id, li) {
+  if (!confirm('Izbriši ta element?')) return;
+  fetch(`/admin/meniji/item/${id}/delete`, { method: 'POST' })
+    .then(() => { li.remove(); showToast('Element izbrisan', 'info'); });
+}
+</script>
+{% endblock %}

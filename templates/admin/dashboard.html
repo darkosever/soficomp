@@ -1,0 +1,145 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="stat-label">Strani</div>
+    <div class="stat-value">{{ stats.pages }}</div>
+    <div class="stat-sub">Objavljenih strani</div>
+  </div>
+  <div class="stat-card yellow">
+    <div class="stat-icon yellow">
+      <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="stat-label">Odprte prijave</div>
+    <div class="stat-value">{{ stats.issues_open }}</div>
+    <div class="stat-sub">Čaka na obravnavo</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-icon green">
+      <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="stat-label">Skupaj prijav</div>
+    <div class="stat-value">{{ stats.issues_total }}</div>
+    <div class="stat-sub">Vseh časa</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </div>
+    <div class="stat-label">Danes</div>
+    <div class="stat-value">{{ stats.issues_today }}</div>
+    <div class="stat-sub">Novih prijav danes</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start;">
+  <!-- Recent issues table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Zadnje prijave</div>
+      <a href="{{ url_for('admin_issues') }}" class="btn btn-secondary btn-sm">Vse prijave →</a>
+    </div>
+    {% if recent_issues %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>Podjetje</th>
+            <th>Lokacija</th>
+            <th>Prioriteta</th>
+            <th>Status</th>
+            <th>Datum</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for issue in recent_issues %}
+          <tr>
+            <td><span class="primary" style="font-family:monospace; font-size:0.82rem;">{{ issue.ticket_id }}</span></td>
+            <td><span class="primary">{{ issue.company_name }}</span></td>
+            <td><span class="muted">{{ issue.location }}</span></td>
+            <td>
+              {% if issue.priority == 'high' %}
+                <span style="color:var(--danger); font-weight:600; font-size:0.8rem;">● Visoka</span>
+              {% elif issue.priority == 'low' %}
+                <span style="color:var(--text-3); font-size:0.8rem;">● Nizka</span>
+              {% else %}
+                <span style="color:var(--warning); font-size:0.8rem;">● Normalna</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if issue.status_name %}
+              <span class="status-badge" style="background:{{ issue.status_color }}20; color:{{ issue.status_color }}; border:1px solid {{ issue.status_color }}40;">
+                {{ issue.status_name }}
+              </span>
+              {% else %}—{% endif %}
+            </td>
+            <td><span class="muted">{{ issue.created_at[:10] }}</span></td>
+            <td>
+              <a href="{{ url_for('admin_issue_detail', issue_id=issue.id) }}" class="btn btn-secondary btn-sm">Odpri</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      <h3>Ni prijav</h3>
+      <p>Ko stranke oddajo prijave, bodo prikazane tukaj.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Status chart -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Prijave po stanjih</div>
+    </div>
+    <div class="card-body">
+      {% for row in issues_by_status %}
+      <div style="margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:10px; height:10px; border-radius:50%; background:{{ row.color }};"></div>
+            <span style="font-size:0.85rem; font-weight:500;">{{ row.name }}</span>
+          </div>
+          <span style="font-size:0.85rem; font-weight:700; color:var(--text-2);">{{ row.cnt }}</span>
+        </div>
+        {% if stats.issues_total > 0 %}
+        <div style="height:4px; background:var(--border); border-radius:2px; overflow:hidden;">
+          <div style="height:100%; width:{{ (row.cnt / stats.issues_total * 100)|round }}%; background:{{ row.color }}; border-radius:2px; transition:width 0.5s;"></div>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <div class="divider" style="margin:20px 0;"></div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <a href="{{ url_for('admin_pages') }}" class="btn btn-secondary" style="justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Upravljaj strani
+        </a>
+        <a href="{{ url_for('admin_settings') }}" class="btn btn-secondary" style="justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="3"/></svg>
+          Nastavitve
+        </a>
+        <a href="{{ url_for('admin_issues_export') }}" class="btn btn-secondary" style="justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Izvozi CSV
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

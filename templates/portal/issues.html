@@ -1,0 +1,58 @@
+{% extends "portal/base.html" %}
+{% block title %}Moje prijave{% endblock %}
+{% block topbar_title %}Moje prijave{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('portal_report_issue') }}" class="btn btn-primary btn-sm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Nova prijava
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="p-card">
+  {% if issues %}
+  <div class="p-table-wrap">
+    <table class="p-table">
+      <thead>
+        <tr><th>Ticket ID</th><th>Opis</th><th>Lokacija</th><th>Status</th><th>Prioriteta</th><th>Datum</th></tr>
+      </thead>
+      <tbody>
+        {% for i in issues %}
+        {% set pcolor = {'low':'var(--text-3)','normal':'var(--accent)','high':'var(--danger)'} %}
+        {% set pname = {'low':'Nizka','normal':'Normalna','high':'Visoka'} %}
+        <tr>
+          <td><span style="font-family:monospace; font-size:0.78rem; color:var(--accent);">{{ i.ticket_id }}</span></td>
+          <td>
+            <span class="primary" style="font-size:0.82rem;">
+              {{ i.description[:60] }}{% if i.description|length > 60 %}…{% endif %}
+            </span>
+          </td>
+          <td><span class="muted">{{ i.location or '—' }}</span></td>
+          <td>
+            {% if i.status_color %}
+            <span class="status-badge" style="background:{{ i.status_color }}1a; color:{{ i.status_color }}; border:1px solid {{ i.status_color }}33; font-size:0.68rem;">
+              {{ i.status_name or '—' }}
+            </span>
+            {% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td>
+            <span style="font-size:0.78rem; font-weight:600; color:{{ pcolor.get(i.priority,'var(--text-3)') }};">
+              {{ pname.get(i.priority, i.priority) }}
+            </span>
+          </td>
+          <td><span class="muted">{{ i.created_at[:10] }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    <h3>Ni prijav</h3>
+    <p>Ko prijavite težavo, bo prikazana tukaj.</p>
+    <a href="{{ url_for('portal_report_issue') }}" class="btn btn-primary" style="margin-top:8px;">Oddaj prijavo</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

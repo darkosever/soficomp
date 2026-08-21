@@ -1,0 +1,106 @@
+{% extends "admin/base.html" %}
+{% block title %}Prijave težav{% endblock %}
+{% block topbar_title %}Prijave težav{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('admin_issues_export') }}" class="btn btn-secondary btn-sm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Izvozi CSV
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="filter-row">
+  <form method="GET" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+    <div class="search-bar" style="min-width:220px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" name="q" placeholder="Iščite po podjetju, ticketu..." value="{{ search }}">
+    </div>
+    <select name="status" class="form-control" style="width:auto; min-width:160px;" onchange="this.form.submit()">
+      <option value="">Vsa stanja</option>
+      {% for s in statuses %}
+      <option value="{{ s.id }}" {{ 'selected' if status_filter == s.id|string }}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="priority" class="form-control" style="width:auto;" onchange="this.form.submit()">
+      <option value="">Vse prioritete</option>
+      <option value="high" {{ 'selected' if priority_filter == 'high' }}>● Visoka</option>
+      <option value="normal" {{ 'selected' if priority_filter == 'normal' }}>● Normalna</option>
+      <option value="low" {{ 'selected' if priority_filter == 'low' }}>● Nizka</option>
+    </select>
+    <button type="submit" class="btn btn-secondary btn-sm">Filtriraj</button>
+    {% if search or status_filter or priority_filter %}
+    <a href="{{ url_for('admin_issues') }}" class="btn btn-secondary btn-sm">Počisti</a>
+    {% endif %}
+  </form>
+  <div style="margin-left:auto; color:var(--text-3); font-size:0.85rem;">
+    {{ issues|length }} prijav
+  </div>
+</div>
+
+<div class="card">
+  {% if issues %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Ticket</th>
+          <th>Podjetje</th>
+          <th>Lokacija</th>
+          <th>Tip avtomata</th>
+          <th>Prioriteta</th>
+          <th>Status</th>
+          <th>Datum</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for issue in issues %}
+        <tr>
+          <td>
+            <span class="primary" style="font-family:monospace; font-size:0.82rem;">{{ issue.ticket_id }}</span>
+          </td>
+          <td>
+            <span class="primary">{{ issue.company_name }}</span>
+            {% if issue.contact_name %}
+            <div class="muted">{{ issue.contact_name }}</div>
+            {% endif %}
+          </td>
+          <td><span class="muted">{{ issue.location }}</span></td>
+          <td><span class="muted">{{ issue.machine_type or '—' }}</span></td>
+          <td>
+            {% if issue.priority == 'high' %}
+              <span style="color:var(--danger); font-weight:700; font-size:0.8rem;">↑ Visoka</span>
+            {% elif issue.priority == 'low' %}
+              <span style="color:var(--text-3); font-size:0.8rem;">↓ Nizka</span>
+            {% else %}
+              <span style="color:var(--warning); font-size:0.8rem;">→ Normalna</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if issue.status_name %}
+            <span class="status-badge" style="background:{{ issue.status_color }}1a; color:{{ issue.status_color }}; border:1px solid {{ issue.status_color }}33;">
+              {{ issue.status_name }}
+            </span>
+            {% else %}
+            <span class="status-badge" style="background:var(--bg-3); color:var(--text-3);">Brez stanja</span>
+            {% endif %}
+          </td>
+          <td><span class="muted">{{ issue.created_at[:10] }}</span></td>
+          <td>
+            <a href="{{ url_for('admin_issue_detail', issue_id=issue.id) }}" class="btn btn-secondary btn-sm">Odpri</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    <h3>Ni prijav</h3>
+    <p>{% if search or status_filter %}Ni zadetkov za iskanje.{% else %}Ko stranke oddajo prijave, bodo tukaj.{% endif %}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
