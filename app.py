@@ -276,7 +276,7 @@ def init_db():
 
     default_settings = {
         'site_name': 'SOFIComp',
-        'site_tagline': 'Avtomati prihodnosti',
+        'site_tagline': 'Avtomati prihodnosti!!',
         'site_logo': '',
         'footer_text': '© 2024 SOFIComp d.o.o. Vse pravice pridržane.',
         'footer_address': 'Slovenija',
@@ -285,7 +285,7 @@ def init_db():
         'social_facebook': '',
         'social_instagram': '',
         'social_linkedin': '',
-        'hero_title': 'Avtomati prihodnosti!',
+        'hero_title': 'Avtomati prihodnosti!!',
         'hero_subtitle': 'Pametne rešitve za samopostrežno prodajo. Zanesljivo, moderno, connected.',
         'hero_cta': 'Konfiguriraj avtomat',
         'contact_address': 'Slovenija',
